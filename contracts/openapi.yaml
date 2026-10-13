@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: Support Reliability Lab API (proposed contract)
+  version: 1.0.0
+  description: >-
+    Local synthetic support-agent evaluation service. This is a planning contract,
+    not a running API. P0 must bind to localhost; P1 must implement JWT and
+    workspace-scoped authorization before exposure beyond localhost.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health/live:
+    get:
+      summary: Process liveness
+      responses:
+        '200':
+          description: Alive
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties: { status: { type: string, const: ok } }
+  /health/ready:
+    get:
+      summary: Database and dataset readiness
+      responses:
+        '200': { description: Ready }
+        '503': { description: Not ready }
+  /api/v1/datasets:
+    get:
+      summary: Versioned synthetic dataset manifests
+      responses:
+        '200': { description: Paginated manifests }
+  /api/v1/evaluation-runs:
+    get:
+      summary: List evaluation runs
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { in: query, name: cursor, schema: { type: string } }
+      responses:
+        '200': { description: Run list }
+    post:
+      summary: Enqueue an offline evaluation run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRunRequest' }
+      responses:
+        '202':
+          description: Queued, not completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunEnqueued' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/evaluation-runs/{runId}:
+    get:
+      summary: Run status and aggregate metrics
+      parameters:
+        - { $ref: '#/components/parameters/RunId' }
+      responses:
+        '200': { description: Run metadata }
+        '404': { description: Not found or unavailable }
+  /api/v1/evaluation-runs/{runId}/cases:
+    get:
+      summary: Paginated rule and case outcomes
+      parameters:
+        - { $ref: '#/components/parameters/RunId' }
+        - { in: query, name: verdict, schema: { enum: [pass, fail, error] } }
+      responses:
+        '200': { description: Case results }
+  /api/v1/evaluation-runs/{runId}/cases/{caseId}:
+    get:
+      summary: Sanitized case drilldown
+      parameters:
+        - { $ref: '#/components/parameters/RunId' }
+        - { in: path, name: caseId, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Case evidence }
+  /api/v1/evaluation-runs/{runId}/compare:
+    get:
+      summary: Paired comparison against baseline run
+      parameters:
+        - { $ref: '#/components/parameters/RunId' }
+        - { in: query, name: baselineRunId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Paired comparison }
+        '409': { description: Dataset manifest mismatch }
+  /api/v1/evaluation-runs/{runId}/gate:
+    get:
+      summary: Immutable release-gate result
+      parameters:
+        - { $ref: '#/components/parameters/RunId' }
+      responses:
+        '200':
+          description: PASS, BLOCK or ERROR; completed run does not imply PASS
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GateResult' }
+  /api/v1/metrics/summary:
+    get:
+      summary: SQL aggregates with explicit denominators
+      responses:
+        '200': { description: Aggregates }
+components:
+  parameters:
+    RunId:
+      in: path
+      name: runId
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    ValidationError:
+      description: Invalid data
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    CreateRunRequest:
+      type: object
+      additionalProperties: false
+      required: [datasetVersion, agentVersion, runMode]
+      properties:
+        datasetVersion: { type: string }
+        agentVersion: { type: string }
+        baselineRunId: { type: [string, 'null'], format: uuid }
+        runMode: { type: string, const: offline }
+        maxConcurrency: { type: integer, minimum: 1, maximum: 8, default: 4 }
+    RunEnqueued:
+      type: object
+      required: [runId, status]
+      properties:
+        runId: { type: string, format: uuid }
+        status: { type: string, const: queued }
+    GateResult:
+      type: object
+      required: [gateVersion, candidateRunId, datasetVersion, status, blockers, evaluatorVersion, caseCount]
+      properties:
+        gateVersion: { type: string }
+        candidateRunId: { type: string }
+        baselineRunId: { type: [string, 'null'] }
+        datasetVersion: { type: string }
+        status: { enum: [PASS, BLOCK, ERROR] }
+        blockers: { type: array, items: { type: string } }
+        evaluatorVersion: { type: string }
+        caseCount: { type: integer, minimum: 0 }
+        metrics: { type: object, additionalProperties: true }
+    Error:
+      type: object
+      required: [code, message, correlationId]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        correlationId: { type: string }

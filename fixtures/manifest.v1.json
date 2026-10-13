@@ -1,0 +1,26 @@
+{
+  "datasetVersion": "v1",
+  "policyVersion": "SYN-POLICY-1",
+  "recordCount": 80,
+  "criticalCaseCount": 44,
+  "sha256": "e02ae60e86b80da3866098c0d731630d4e199cb11ebf40d78caa508f58e4cf1d",
+  "categoryCounts": {
+    "refund_guidance": 12,
+    "cancellation": 10,
+    "generation_credits": 12,
+    "annual_proration": 8,
+    "account_security": 10,
+    "knowledge_grounding": 10,
+    "tool_failure": 8,
+    "adversarial_ambiguous": 10
+  },
+  "riskCounts": {
+    "critical": 44,
+    "high": 30,
+    "standard": 6
+  },
+  "humanReviewStatus": "starter_labels_not_independently_adjudicated",
+  "usesRealCustomerData": false,
+  "format": "jsonl",
+  "notes": "Gold labels are starter hypotheses; require human annotation and versioned adjudication before reporting evaluator accuracy."
+}

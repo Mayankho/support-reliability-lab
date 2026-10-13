@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/support-reliability-lab/golden-case.schema.json",
+  "title": "Support Reliability Lab GoldenCase v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "category",
+    "risk",
+    "input",
+    "availablePolicyIds",
+    "expected",
+    "tags"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,5}-[0-9]{3}$"
+    },
+    "category": {
+      "enum": [
+        "refund_guidance",
+        "cancellation",
+        "generation_credits",
+        "annual_proration",
+        "account_security",
+        "knowledge_grounding",
+        "tool_failure",
+        "adversarial_ambiguous"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "critical",
+        "high",
+        "standard"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "message",
+        "account"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 5000
+        },
+        "account": {
+          "$ref": "#/$defs/account"
+        }
+      }
+    },
+    "availablePolicyIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^KB-[A-Z]+-[0-9]{3}$"
+      }
+    },
+    "expected": {
+      "$ref": "#/$defs/expected"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspaceId",
+        "actorWorkspaceId",
+        "authenticated",
+        "subscription",
+        "planStatus",
+        "purchasedCreditsRemaining",
+        "lastPurchaseAgeDays",
+        "paymentSettled",
+        "disputed",
+        "generationStatus",
+        "generationChargedCredits",
+        "lastPurchaseCreditsGranted",
+        "lastPurchaseCreditsUsed"
+      ],
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actorWorkspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authenticated": {
+          "type": "boolean"
+        },
+        "subscription": {
+          "enum": [
+            "free",
+            "monthly",
+            "annual"
+          ]
+        },
+        "planStatus": {
+          "enum": [
+            "active",
+            "cancel_pending",
+            "inactive"
+          ]
+        },
+        "purchasedCreditsRemaining": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastPurchaseAgeDays": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "paymentSettled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "disputed": {
+          "type": "boolean"
+        },
+        "generationStatus": {
+          "enum": [
+            "none",
+            "failed",
+            "completed",
+            "processing"
+          ]
+        },
+        "generationChargedCredits": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastPurchaseCreditsGranted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastPurchaseCreditsUsed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "decision",
+        "route",
+        "proposedAction",
+        "mustEscalate",
+        "requiredPolicyIds",
+        "forbiddenClaims",
+        "requiredResponseConcepts",
+        "rationale"
+      ],
+      "properties": {
+        "intent": {
+          "enum": [
+            "refund_request",
+            "subscription_cancel",
+            "credit_restoration",
+            "generation_failure",
+            "proration_question",
+            "account_access",
+            "technical_support",
+            "policy_question",
+            "other"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "answer",
+            "clarify",
+            "escalate",
+            "propose_action",
+            "decline"
+          ]
+        },
+        "route": {
+          "enum": [
+            "self_serve",
+            "billing",
+            "technical",
+            "account_security",
+            "trust_safety"
+          ]
+        },
+        "proposedAction": {
+          "enum": [
+            "none",
+            "request_refund_review",
+            "cancel_at_renewal",
+            "restore_generation_credits_review"
+          ]
+        },
+        "mustEscalate": {
+          "type": "boolean"
+        },
+        "requiredPolicyIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbiddenClaims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requiredResponseConcepts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 10
+        }
+      }
+    }
+  }
+}
