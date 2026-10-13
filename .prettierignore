@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+artifacts
+docs/TECHNICAL_SPEC.md
+contracts
+fixtures

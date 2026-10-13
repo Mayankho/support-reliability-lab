@@ -1,0 +1,21 @@
+name: support-reliability-lab
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: support_reliability
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - support-reliability-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U app -d support_reliability']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  support-reliability-pgdata:

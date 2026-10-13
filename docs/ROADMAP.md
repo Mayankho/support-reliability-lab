@@ -1,11 +1,11 @@
 # Roadmap
 
-The build is split into ten milestones, each small enough to review as one pull request. Each milestone lists what it delivers and the check that closes it. Requirements behind each milestone are in [`TECHNICAL_SPEC.md`](./TECHNICAL_SPEC.md).
+The build is split into ten milestones, each small enough to review as one pull request. Each milestone lists what it delivers and the check that closes it. Requirements behind each milestone are in [`TECHNICAL_SPEC.md`](./TECHNICAL_SPEC.md). Design choices are recorded in [`DECISIONS.md`](./DECISIONS.md).
 
 | #   | Milestone                               | Status  |
 | --- | --------------------------------------- | ------- |
-| 00  | Scaffold, local environment, and health | Next    |
-| 01  | Domain and policy contracts             | Planned |
+| 00  | Scaffold, local environment, and health | Done    |
+| 01  | Domain and policy contracts             | Next    |
 | 02  | Dataset integrity and 80-case fixtures  | Planned |
 | 03  | Deterministic reference agent           | Planned |
 | 04  | Independent grading                     | Planned |
