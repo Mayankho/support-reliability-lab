@@ -10,11 +10,12 @@ I built it around the problems a support systems engineering role deals with eve
 
 ## Status
 
-| Milestone                                                                                       | State   |
-| ----------------------------------------------------------------------------------------------- | ------- |
-| Workspace, config validation, liveness endpoint, local Postgres, CI                             | Done    |
-| Agent contracts and the `SYN-POLICY-1` registry                                                 | Next    |
-| Dataset integrity, reference agent, independent graders, Postgres runner, release gate, API, UI | Planned |
+| Milestone                                                                    | State   |
+| ---------------------------------------------------------------------------- | ------- |
+| Workspace, config validation, liveness endpoint, local Postgres, CI          | Done    |
+| Agent contracts and the `SYN-POLICY-1` registry                              | Done    |
+| Dataset integrity checks for the 80-case fixture                             | Next    |
+| Reference agent, independent graders, Postgres runner, release gate, API, UI | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -33,10 +34,10 @@ flowchart LR
 
 The design rests on four guarantees:
 
-- **The agent never sees the answers.** Gold labels go only to the graders.
+- **The agent never sees the answers.** Gold labels go only to the graders. `toAgentVisibleInput` builds the agent input from the message, account context, and supplied policy documents, and a test asserts that no label reaches it.
 - **Proposals are not actions.** An agent can propose a refund review, a cancellation at renewal, or a credit-restoration review. Nothing executes them, and claiming one completed is a critical failure.
 - **The gate fails closed.** A grader error, timeout, or missing result blocks the release. It is never counted as a pass.
-- **Evidence is pinned.** The policy and the dataset are SHA-256 hashed, so a silent edit fails a check.
+- **Evidence is pinned.** The policy file, each policy document, and the dataset are SHA-256 hashed, so a silent edit fails a test.
 
 ## Quick start
 
@@ -61,6 +62,8 @@ The server binds to `127.0.0.1` only, and startup is rejected if `MODEL_ENABLED`
 
 ```text
 apps/api/              Fastify service: config validation, health route
+packages/contracts/    Zod schemas for agent input/output and golden cases
+packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
 fixtures/              Synthetic policy, 80 golden cases, dataset manifest
 contracts/             JSON Schema and starter OpenAPI contract
 docs/                  Spec, roadmap, and design decisions
@@ -71,6 +74,7 @@ docs/                  Spec, roadmap, and design decisions
 - [`docs/TECHNICAL_SPEC.md`](docs/TECHNICAL_SPEC.md): requirements, rubrics, data model, API, and the threat model
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): milestones and status
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): design decisions and their tradeoffs
+- [`packages/policies/README.md`](packages/policies/README.md): synthetic policy precedence
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): engineering standards for this repository
 
 ## Limitations

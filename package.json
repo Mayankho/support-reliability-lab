@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "pnpm --filter @srl/api typecheck",
-    "test": "pnpm --filter @srl/api test",
+    "typecheck": "pnpm --filter @srl/contracts --filter @srl/policies --filter @srl/api typecheck",
+    "test": "pnpm --filter @srl/contracts --filter @srl/policies --filter @srl/api test",
     "dev": "pnpm --filter @srl/api dev"
   },
   "devDependencies": {

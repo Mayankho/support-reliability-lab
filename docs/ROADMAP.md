@@ -5,8 +5,8 @@ The build is split into ten milestones, each small enough to review as one pull 
 | #   | Milestone                               | Status  |
 | --- | --------------------------------------- | ------- |
 | 00  | Scaffold, local environment, and health | Done    |
-| 01  | Domain and policy contracts             | Next    |
-| 02  | Dataset integrity and 80-case fixtures  | Planned |
+| 01  | Domain and policy contracts             | Done    |
+| 02  | Dataset integrity and 80-case fixtures  | Next    |
 | 03  | Deterministic reference agent           | Planned |
 | 04  | Independent grading                     | Planned |
 | 05  | Persistence and worker                  | Planned |
