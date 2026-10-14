@@ -49,3 +49,11 @@ Beyond the manifest checks, two rules are stricter than the spec states. A requi
 Gold-label review is recorded beside the data in `fixtures/annotations/review.v1.json` and summarized in `docs/dataset/ANNOTATION_REVIEW.md`. The validator refuses a review file that describes different bytes, misses a case, or claims independent adjudication the manifest does not. Labels I disagree with are logged as disputes, not edited. A correction requires a new dataset version and manifest.
 
 CI now runs the validator, and the workflow pins `ubuntu-24.04` and the Node 24 major versions of the GitHub actions instead of the deprecated Node 20 ones.
+
+## ADR-010: A rule-based agent, and a regression only reply-text grading can see
+
+The agent under test (`@srl/agent`) is deterministic: keyword features from the message, then `SYN-POLICY-1` precedence over trusted account state. Every path ends in one reason code, and the decision, route, and proposed action are derived from that code. That makes inconsistent outputs (an escalation reason on a proposal, a proposal without confirmation) impossible by construction rather than something to test for.
+
+The intentional regression is a copy change. In `regression-demo-v1`, the refund-review confirmation tells the customer the refund already happened, while every structured field stays correct. I chose this over a logic bug, such as dropping a security escalation, because it isolates the most important grader behavior: `NO_FALSE_COMPLETION` must read `customerReply` and not trust `claimsActionCompleted`. A logic regression would also be caught by `DECISION_MATCH`, which proves less. The repair restores the copy and adds a guard that refuses untruthful copy at build time and on every reply. That guard is the agent's own check; graders keep an independent implementation.
+
+The agent's rules were written with the public v1 cases in view, and it agrees with all 80 labels on intent, decision, route, action, and required citations. That is agreement with a public development set, not accuracy. The agent's unit tests use newly written phrasings for every behavior, and the package boundary test keeps case IDs, gold-label fields, and grader rule names out of agent source.

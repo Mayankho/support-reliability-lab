@@ -4,10 +4,17 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 02, dataset integrity and annotation review.
-- **Next action:** milestone 03. Build `@srl/agent` with `reference-v1`, `regression-demo-v1`, and `repaired-v1`, using only `toAgentVisibleInput` output and `SYN-POLICY-1`.
+- **Last completed milestone:** 03, deterministic agent versions.
+- **Next action:** milestone 04. Build `@srl/evals` graders for the twelve rule IDs, independent of `@srl/agent`, with pass, fail, and error tests for each.
 
 ## Log
+
+### Milestone 03: agent versions
+
+- Added `@srl/agent` with `reference-v1`, `regression-demo-v1`, and `repaired-v1` (`packages/agent/README.md`).
+- The regression is one copy entry: the refund-review reply claims the refund happened while structured fields stay correct. The repair restores the copy and enables a build-time and runtime completion-wording guard.
+- 76 agent tests: behavior on newly written inputs, identity and isolation (no protected action for unauthenticated or cross-workspace callers), prompt injection, citations limited to supplied documents, determinism, malformed input, version differences, and a package-boundary scan.
+- Local check against the v1 labels (outside the test suite, since agents must not read labels): all three versions agree on intent, decision, route, action, and required citations for 80/80 cases. The difference between versions is only in reply text, which is what milestone 04 must catch.
 
 ### Milestone 02: dataset integrity
 

@@ -10,12 +10,13 @@ I built it around the problems a support systems engineering role deals with eve
 
 ## Status
 
-| Milestone                                                                    | State   |
-| ---------------------------------------------------------------------------- | ------- |
-| Workspace, config validation, liveness endpoint, local Postgres, CI          | Done    |
-| Agent contracts and the `SYN-POLICY-1` registry                              | Done    |
-| Dataset integrity checks and gold-label review log for the 80-case fixture   | Done    |
-| Reference agent, independent graders, Postgres runner, release gate, API, UI | Planned |
+| Milestone                                                                  | State   |
+| -------------------------------------------------------------------------- | ------- |
+| Workspace, config validation, liveness endpoint, local Postgres, CI        | Done    |
+| Agent contracts and the `SYN-POLICY-1` registry                            | Done    |
+| Dataset integrity checks and gold-label review log for the 80-case fixture | Done    |
+| Three agent versions: reference, intentional regression, repair            | Done    |
+| Independent graders, Postgres runner, release gate, API, UI                | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -66,6 +67,7 @@ apps/api/              Fastify service: config validation, health route
 packages/contracts/    Zod schemas for agent input/output and golden cases
 packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
 packages/dataset/      Fixture loader and eval:validate-data
+packages/agent/        reference-v1, regression-demo-v1, repaired-v1
 fixtures/              Synthetic policy, 80 golden cases, manifest, label review
 contracts/             JSON Schema and starter OpenAPI contract
 docs/                  Spec, roadmap, and design decisions
@@ -77,6 +79,7 @@ docs/                  Spec, roadmap, and design decisions
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): milestones and status
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): design decisions and their tradeoffs
 - [`packages/policies/README.md`](packages/policies/README.md): synthetic policy precedence
+- [`packages/agent/README.md`](packages/agent/README.md): agent versions and the intentional regression
 - [`docs/dataset/ANNOTATION_REVIEW.md`](docs/dataset/ANNOTATION_REVIEW.md): gold-label review status and disputes
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): engineering standards for this repository
 

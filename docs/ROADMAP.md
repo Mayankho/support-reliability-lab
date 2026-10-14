@@ -7,8 +7,8 @@ The build is split into ten milestones, each small enough to review as one pull 
 | 00  | Scaffold, local environment, and health | Done    |
 | 01  | Domain and policy contracts             | Done    |
 | 02  | Dataset integrity and 80-case fixtures  | Done    |
-| 03  | Deterministic reference agent           | Next    |
-| 04  | Independent grading                     | Planned |
+| 03  | Deterministic reference agent           | Done    |
+| 04  | Independent grading                     | Next    |
 | 05  | Persistence and worker                  | Planned |
 | 06  | Comparisons, gates, and reports         | Planned |
 | 07  | Validated HTTP API                      | Planned |
@@ -87,7 +87,6 @@ README with architecture, setup commands, an example trace, screenshots, a five-
 - The starter gold labels had one single-reviewer pass in milestone 02 (`docs/dataset/ANNOTATION_REVIEW.md`). Independent double annotation and adjudication have not happened, so `humanReviewStatus` stays `starter_labels_not_independently_adjudicated`. GEN-012's required citation is disputed and should be corrected in a future dataset version.
 - ORM and migration tooling: the spec proposes Drizzle. That gets confirmed or replaced in milestone 05.
 - Whether case inputs are stored in Postgres in full or as snapshots with hashes, also decided in milestone 05.
-- Which single intentional regression the demo uses, decided in milestone 03.
 
 ## Invariants
 
