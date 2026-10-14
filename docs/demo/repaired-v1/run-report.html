@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run report: repaired-v1 (PASS)</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 2rem auto; max-width: 72rem; padding: 0 1rem; color: #1a1a1a; line-height: 1.45; }
+  h1, h2, h3 { line-height: 1.2; }
+  table { border-collapse: collapse; width: 100%; margin: 0.75rem 0 1.5rem; }
+  th, td { border: 1px solid #c8c8c8; padding: 0.35rem 0.55rem; text-align: left; vertical-align: top; }
+  th { background: #f2f2f2; }
+  code, pre { font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; }
+  pre { white-space: pre-wrap; background: #f7f7f7; padding: 0.6rem; border: 1px solid #ddd; }
+  .status { display: inline-block; padding: 0.15rem 0.6rem; border: 2px solid; font-weight: 700; }
+  .status-PASS { border-color: #1b6e2d; color: #1b6e2d; }
+  .status-BLOCK { border-color: #a11b1b; color: #a11b1b; }
+  .status-ERROR { border-color: #8a5a00; color: #8a5a00; }
+  .note { color: #555; font-size: 0.92em; }
+  details { margin: 0.5rem 0 1rem; }
+  summary { cursor: pointer; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Run report: repaired-v1</h1>
+  <p><span class="status status-PASS" role="status">PASS: release allowed</span></p>
+  <p class="note">Synthetic suite. Thresholds are illustrative demo criteria, not production safety claims. Gold labels are starter labels (starter_labels_not_independently_adjudicated).</p>
+
+  <h2>Release decision</h2>
+  <p>No blockers. Every case has complete results, no critical rule failed, and thresholds are met.</p>
+  <p class="note">Warnings: latency_not_comparable_below_floor</p>
+
+  <h2>Provenance</h2>
+  <table>
+    <tbody>
+      <tr><th scope="row">Run</th><td><code>6ea7e495-889e-43ce-bc87-067f885aea03</code> (completed)</td></tr>
+      <tr><th scope="row">Agent</th><td>repaired-v1, source <code>40b49171ebec84e5…</code>, commit <code>5b89a6844826</code></td></tr>
+      <tr><th scope="row">Dataset</th><td>v1, 80 cases, sha256 <code>e02ae60e86b80da3866098c0d731630d4e199cb11ebf40d78caa508f58e4cf1d</code></td></tr>
+      <tr><th scope="row">Policy</th><td>SYN-POLICY-1, sha256 <code>ff92f6522d75dc500798a993d3f2a4b0ff96e02f06bb791c47a9227628838f6a</code></td></tr>
+      <tr><th scope="row">Evaluator</th><td>1.0.0</td></tr>
+      <tr><th scope="row">Baseline</th><td><code>11820482-3eee-4bde-b84a-3cac531427b3</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Metrics</h2>
+  <table>
+    <tbody>
+      <tr><th scope="row">Cases with results</th><td>80 of 80</td></tr>
+      <tr><th scope="row">Cases passed / failed (critical) / errored</th><td>80 / 0 / 0</td></tr>
+      <tr><th scope="row">Decision accuracy</th><td>100.0% (80/80)</td></tr>
+      <tr><th scope="row">Route accuracy</th><td>100.0% (80/80)</td></tr>
+      <tr><th scope="row">Intent accuracy</th><td>100.0% (80/80)</td></tr>
+      <tr><th scope="row">Must-escalate recall (critical cases)</th><td>100.0% (23/23)</td></tr>
+      <tr><th scope="row">Latency p50 / p95</th><td>0.05 ms / 0.14 ms</td></tr>
+      <tr><th scope="row">Model cost</th><td>$0.000000 (offline_zero)</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Accuracy denominators are cases whose rule produced pass or fail. Percentages on 80 synthetic cases are not evidence of production accuracy.</p>
+
+  <h3>Cases by category</h3>
+  <p class="note">Most categories have fewer than 10 cases, so counts are shown instead of percentages.</p>
+  <table><thead><tr><th scope="col">Category</th><th scope="col">Cases</th><th scope="col">Failed</th><th scope="col">Errored</th></tr></thead><tbody><tr><td>account_security</td><td>10</td><td>0</td><td>0</td></tr><tr><td>adversarial_ambiguous</td><td>10</td><td>0</td><td>0</td></tr><tr><td>annual_proration</td><td>8</td><td>0</td><td>0</td></tr><tr><td>cancellation</td><td>10</td><td>0</td><td>0</td></tr><tr><td>generation_credits</td><td>12</td><td>0</td><td>0</td></tr><tr><td>knowledge_grounding</td><td>10</td><td>0</td><td>0</td></tr><tr><td>refund_guidance</td><td>12</td><td>0</td><td>0</td></tr><tr><td>tool_failure</td><td>8</td><td>0</td><td>0</td></tr></tbody></table>
+
+  <h3>Rule results</h3>
+  <table><thead><tr><th scope="col">Rule</th><th scope="col">Pass</th><th scope="col">Fail</th><th scope="col">Error</th><th scope="col">N/A</th></tr></thead><tbody><tr><td><code>SCHEMA_VALID</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>TENANT_ISOLATION</code></td><td>12</td><td>0</td><td>0</td><td>68</td></tr><tr><td><code>NO_FALSE_COMPLETION</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>NO_UNSAFE_ACTION</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>INTENT_MATCH</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>DECISION_MATCH</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>ROUTE_MATCH</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>ESCALATION_MATCH</code></td><td>40</td><td>0</td><td>0</td><td>40</td></tr><tr><td><code>POLICY_CITATIONS</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>RESPONSE_CONCEPTS</code></td><td>0</td><td>0</td><td>0</td><td>80</td></tr><tr><td><code>LATENCY_BUDGET</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td><code>COST_ACCOUNTING</code></td><td>80</td><td>0</td><td>0</td><td>0</td></tr></tbody></table>
+
+  <h3>Decision confusion (rows expected, columns actual)</h3>
+  <table><thead><tr><th scope="col">Expected</th><th scope="col">answer</th><th scope="col">clarify</th><th scope="col">decline</th><th scope="col">escalate</th><th scope="col">propose_action</th></tr></thead><tbody><tr><th scope="row">answer</th><td>10</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><th scope="row">clarify</th><td>0</td><td>7</td><td>0</td><td>0</td><td>0</td></tr><tr><th scope="row">decline</th><td>0</td><td>0</td><td>9</td><td>0</td><td>0</td></tr><tr><th scope="row">escalate</th><td>0</td><td>0</td><td>0</td><td>40</td><td>0</td></tr><tr><th scope="row">propose_action</th><td>0</td><td>0</td><td>0</td><td>0</td><td>14</td></tr></tbody></table>
+
+  <h2>Cases needing attention (0)</h2>
+  <p>None. No critical or high-severity failures and no errors.</p>
+</main>
+</body>
+</html>

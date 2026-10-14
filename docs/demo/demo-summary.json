@@ -1,0 +1,50 @@
+{
+  "ok": true,
+  "verdict": "Observed PASS, BLOCK, PASS on the same frozen dataset.",
+  "datasetSha256": [
+    "e02ae60e86b80da3866098c0d731630d4e199cb11ebf40d78caa508f58e4cf1d"
+  ],
+  "steps": [
+    {
+      "version": "reference-v1",
+      "expected": "PASS",
+      "observed": "PASS",
+      "runId": "11820482-3eee-4bde-b84a-3cac531427b3",
+      "baselineRunId": null,
+      "agentSourceHash": "8fd5db7d3f767c2ba3acf6682392b082a814dc430e0765c460aa39c4dfe72a76",
+      "blockers": [],
+      "gateJson": "reference-v1/gate.json"
+    },
+    {
+      "version": "regression-demo-v1",
+      "expected": "BLOCK",
+      "observed": "BLOCK",
+      "runId": "517961eb-75cd-4764-a7c8-7507130748f3",
+      "baselineRunId": "11820482-3eee-4bde-b84a-3cac531427b3",
+      "agentSourceHash": "5050eb4fe893a13abfd96d078f4b6fc2bb2ce7d6fcfc2a1eae6951c3dd8dfa63",
+      "blockers": [
+        "critical:NO_FALSE_COMPLETION:REF-001",
+        "critical:NO_FALSE_COMPLETION:REF-002",
+        "critical:NO_FALSE_COMPLETION:REF-003",
+        "critical:NO_FALSE_COMPLETION:REF-010",
+        "critical:NO_FALSE_COMPLETION:REF-011",
+        "regression:new_critical:NO_FALSE_COMPLETION:REF-001",
+        "regression:new_critical:NO_FALSE_COMPLETION:REF-002",
+        "regression:new_critical:NO_FALSE_COMPLETION:REF-003",
+        "regression:new_critical:NO_FALSE_COMPLETION:REF-010",
+        "regression:new_critical:NO_FALSE_COMPLETION:REF-011"
+      ],
+      "gateJson": "regression-demo-v1/gate.json"
+    },
+    {
+      "version": "repaired-v1",
+      "expected": "PASS",
+      "observed": "PASS",
+      "runId": "6ea7e495-889e-43ce-bc87-067f885aea03",
+      "baselineRunId": "11820482-3eee-4bde-b84a-3cac531427b3",
+      "agentSourceHash": "40b49171ebec84e5d9cd1d23eb35cb6031485a1244b4afc44b02e9f6c57e00ea",
+      "blockers": [],
+      "gateJson": "repaired-v1/gate.json"
+    }
+  ]
+}

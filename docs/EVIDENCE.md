@@ -16,6 +16,7 @@ All data is synthetic. Results describe behavior on 80 invented cases and are no
 [7cdcd55]: https://github.com/Mayankho/support-reliability-lab/commit/7cdcd55
 [41e790b]: https://github.com/Mayankho/support-reliability-lab/commit/41e790b
 [b74e76b]: https://github.com/Mayankho/support-reliability-lab/commit/b74e76b
+[5b89a68]: https://github.com/Mayankho/support-reliability-lab/commit/5b89a68
 
 ## Agent behavior: routing, escalation, and billing guardrails
 
@@ -26,7 +27,7 @@ The reference agent is deterministic and rule-based on purpose. The point is the
 | Agents propose protected actions and never execute them                                      | `packages/policies/src/no-execution.ts`, `packages/contracts/src/agent.ts` | `packages/policies/src/no-execution.test.ts`                                                 | [417d5af][] |
 | Synthetic policy precedence is explicit and pinned by hash                                   | `packages/policies/src/precedence.ts`, `registry.ts`                       | `precedence.test.ts`, `registry.test.ts` (hashes locked to file bytes)                       | [417d5af][] |
 | Unauthenticated or cross-workspace callers never get a protected action                      | `packages/agent/src/plan.ts`, `signals.ts`                                 | `packages/agent/src/agent.test.ts` (identity, isolation, prompt injection)                   | [90414f3][] |
-| Agent code cannot import network modules or call `fetch`                                     | `packages/agent/src/`                                                      | `packages/agent/src/boundary.test.ts` ("has no network access")                              | M10         |
+| Agent code cannot import network modules or call `fetch`                                     | `packages/agent/src/`                                                      | `packages/agent/src/boundary.test.ts` ("has no network access")                              | [5b89a68][] |
 | Citations are limited to documents the agent was given                                       | `packages/agent/src/citations.ts`                                          | `agent.test.ts`; `POLICY_CITATIONS` grader                                                   | [90414f3][] |
 | Critical must-escalate cases are escalated                                                   | `packages/agent/src/plan.ts`                                               | `pnpm demo`: must-escalate recall 23/23 for all three builds                                 | [90414f3][] |
 | The intentional regression is one copy entry, and the repair adds a completion-wording guard | `copy/regression-demo.ts`, `versions/repaired-v1.ts`, `copy/guard.ts`      | `packages/agent/src/versions.test.ts` (repaired-v1 refuses to build with the defective copy) | [90414f3][] |
@@ -103,7 +104,7 @@ The reference agent is deterministic and rule-based on purpose. The point is the
 
 ### Clean-environment run
 
-The committed `roadmap` branch was cloned from a git bundle into a new `node:24.21.0` container (Linux, aarch64), next to a new `postgres:16` container. The clone had no `.env`, no `node_modules`, no local keys, and no untracked files. Every command below ran there, in this order.
+Commit [`5b89a68`][5b89a68] was cloned from a git bundle into a new `node:24.21.0` container (Linux, aarch64), next to a new `postgres:16` container. The clone had no `.env`, no `node_modules`, no local keys, and no untracked files. Every command below ran there, in this order. The same run produced the screenshots in `docs/images/` and the sample reports in [`docs/demo/`](demo/).
 
 | Command                                               | Exit | Observed                                      |
 | ----------------------------------------------------- | ---- | --------------------------------------------- |
@@ -111,7 +112,7 @@ The committed `roadmap` branch was cloned from a git bundle into a new `node:24.
 | `pnpm lint`                                           | 0    |                                               |
 | `pnpm format:check`                                   | 0    |                                               |
 | `pnpm typecheck`                                      | 0    | all packages                                  |
-| `pnpm test`                                           | 0    | 291 unit tests                                |
+| `pnpm test`                                           | 0    | 304 unit tests                                |
 | `pnpm eval:validate-data`                             | 0    | 80 cases, 44 critical, sha256 `e02ae60e…cf1d` |
 | `pnpm db:migrate`, `pnpm seed`                        | 0    |                                               |
 | `pnpm test:integration`                               | 0    | 58 tests (db 8, runner 19, api 31)            |
@@ -120,8 +121,9 @@ The committed `roadmap` branch was cloned from a git bundle into a new `node:24.
 | `pnpm alerts:check`                                   | 0    | 1 firing then resolved, 0 open                |
 | `pnpm scan:sensitive`                                 | 0    | 0 findings                                    |
 | `playwright install --with-deps chromium`, `test:e2e` | 0    | 4 browser tests                               |
+| `pnpm --filter @srl/web screenshots`                  | 0    | 4 screenshots                                 |
 
-The first run of this check caught a real problem: two Markdown files committed without Prettier formatting, which would have failed CI's format step. The fix was folded into the M09 commit before anything was pushed, and the run was repeated.
+An earlier run of this check, on the milestone 09 commit, caught a real problem: two Markdown files committed without Prettier formatting, which would have failed CI's format step. The fix was folded into that commit before anything was pushed.
 
 ### Pinned hashes
 

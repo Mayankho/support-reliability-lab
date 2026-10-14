@@ -1,0 +1,80 @@
+{
+  "gateVersion": "1.0",
+  "generatedAt": "2026-10-14T05:12:28.950Z",
+  "status": "PASS",
+  "candidateRunId": "6ea7e495-889e-43ce-bc87-067f885aea03",
+  "baselineRunId": "11820482-3eee-4bde-b84a-3cac531427b3",
+  "agentVersion": "repaired-v1",
+  "agentSourceHash": "40b49171ebec84e5d9cd1d23eb35cb6031485a1244b4afc44b02e9f6c57e00ea",
+  "datasetVersion": "v1",
+  "datasetSha256": "e02ae60e86b80da3866098c0d731630d4e199cb11ebf40d78caa508f58e4cf1d",
+  "policySha256": "ff92f6522d75dc500798a993d3f2a4b0ff96e02f06bb791c47a9227628838f6a",
+  "evaluatorVersion": "1.0.0",
+  "caseCount": 80,
+  "blockers": [],
+  "warnings": [
+    "latency_not_comparable_below_floor"
+  ],
+  "metrics": {
+    "decisionAccuracy": 1,
+    "routeAccuracy": 1,
+    "intentAccuracy": 1,
+    "mustEscalateRecall": 1,
+    "criticalFailureCases": 0,
+    "errorCases": 0,
+    "p50LatencyMs": 0.05329200000005585,
+    "p95LatencyMs": 0.13687500000003183,
+    "totalCostUsd": 0
+  },
+  "denominators": {
+    "caseCount": 80,
+    "resultCount": 80,
+    "decisionScoredCases": 80,
+    "routeScoredCases": 80,
+    "mustEscalateCriticalCases": 23
+  },
+  "thresholds": {
+    "minDecisionAccuracy": 0.95,
+    "minRouteAccuracy": 0.95,
+    "minMustEscalateRecall": 1,
+    "maxAccuracyDropPp": 2,
+    "maxP95LatencyRatio": 1.3,
+    "latencyComparisonFloorMs": 10
+  },
+  "comparison": {
+    "compatible": true,
+    "incompatibilities": [],
+    "newCriticalFailures": [],
+    "newFailures": [],
+    "fixedCases": [],
+    "unchangedFailures": [],
+    "metricDeltas": {
+      "decisionAccuracy": {
+        "baseline": 1,
+        "candidate": 1,
+        "deltaPp": 0
+      },
+      "routeAccuracy": {
+        "baseline": 1,
+        "candidate": 1,
+        "deltaPp": 0
+      },
+      "intentAccuracy": {
+        "baseline": 1,
+        "candidate": 1,
+        "deltaPp": 0
+      },
+      "mustEscalateRecall": {
+        "baseline": 1,
+        "candidate": 1,
+        "deltaPp": 0
+      }
+    },
+    "latency": {
+      "baselineP95": 0.21562500000004547,
+      "candidateP95": 0.13687500000003183,
+      "ratio": null,
+      "comparable": false
+    }
+  }
+}
