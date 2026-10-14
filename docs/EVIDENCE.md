@@ -19,6 +19,7 @@ All data is synthetic. Results describe behavior on 80 invented cases and are no
 [5b89a68]: https://github.com/Mayankho/support-reliability-lab/commit/5b89a68
 [84c6325]: https://github.com/Mayankho/support-reliability-lab/commit/84c6325
 [edad02e]: https://github.com/Mayankho/support-reliability-lab/commit/edad02e
+[b316608]: https://github.com/Mayankho/support-reliability-lab/commit/b316608
 
 ## Agent behavior: routing, escalation, and billing guardrails
 
@@ -114,31 +115,35 @@ The reference agent is deterministic and rule-based on purpose. The point is the
 | Flags are independent of the issue type; `F-OUT` never comes from one report                                  | `src/classify/flags.ts`, `incident.ts`                | `triage.test.ts` ("sets F-SEC even when the primary issue is benign"), `incident.test.ts`    | [edad02e][] |
 | A root cause is confirmed only by trusted synthetic state, and contradictions are recorded                    | `src/classify/state.ts`                               | `triage.test.ts` ("never confirms a cause from what the customer says")                      | [edad02e][] |
 | Unsupported content and languages abstain instead of guessing                                                 | `src/classify/triage.ts`                              | `triage.test.ts` ("abstention and languages")                                                | [edad02e][] |
-| The demo fails if any secret, name, email, or message text reaches its output                                 | `src/demo.ts`                                         | `demo.test.ts`; `pnpm tickets:demo` in CI before the scan                                    | T05         |
-| The private import cannot run by accident or write inside the repository                                      | `src/private/local-import.ts`                         | `local-import.test.ts` (permission flag, symlink escape, suppression, file modes, no wiring) | T05         |
+| The demo fails if any secret, name, email, or message text reaches its output                                 | `src/demo.ts`                                         | `demo.test.ts`; `pnpm tickets:demo` in CI before the scan                                    | [b316608][] |
+| The private import cannot run by accident or write inside the repository                                      | `src/private/local-import.ts`                         | `local-import.test.ts` (permission flag, symlink escape, suppression, file modes, no wiring) | [b316608][] |
 
 ## Observed results
 
 ### Clean-environment run
 
-Commit [`5b89a68`][5b89a68] was cloned from a git bundle into a new `node:24.21.0` container (Linux, aarch64), next to a new `postgres:16` container. The clone had no `.env`, no `node_modules`, no local keys, and no untracked files. Every command below ran there, in this order. The same run produced the screenshots in `docs/images/` and the sample reports in [`docs/demo/`](demo/).
+Commit [`b316608`][b316608] was cloned from a git bundle into a new `node:24.21.0` container (Linux, aarch64), next to a new `postgres:16` container. The clone had no `.env`, no `node_modules`, no local keys, and no untracked files. Every command below ran there, in this order.
 
-| Command                                               | Exit | Observed                                      |
-| ----------------------------------------------------- | ---- | --------------------------------------------- |
-| `pnpm install --frozen-lockfile`                      | 0    |                                               |
-| `pnpm lint`                                           | 0    |                                               |
-| `pnpm format:check`                                   | 0    |                                               |
-| `pnpm typecheck`                                      | 0    | all packages                                  |
-| `pnpm test`                                           | 0    | 304 unit tests                                |
-| `pnpm eval:validate-data`                             | 0    | 80 cases, 44 critical, sha256 `e02ae60e…cf1d` |
-| `pnpm db:migrate`, `pnpm seed`                        | 0    |                                               |
-| `pnpm test:integration`                               | 0    | 58 tests (db 8, runner 19, api 31)            |
-| `pnpm eval:run -- --agent reference-v1`               | 0    | PASS                                          |
-| `pnpm demo`                                           | 0    | PASS, BLOCK, PASS                             |
-| `pnpm alerts:check`                                   | 0    | 1 firing then resolved, 0 open                |
-| `pnpm scan:sensitive`                                 | 0    | 0 findings                                    |
-| `playwright install --with-deps chromium`, `test:e2e` | 0    | 4 browser tests                               |
-| `pnpm --filter @srl/web screenshots`                  | 0    | 4 screenshots                                 |
+| Command                                               | Exit | Observed                                         |
+| ----------------------------------------------------- | ---- | ------------------------------------------------ |
+| `pnpm install --frozen-lockfile`                      | 0    |                                                  |
+| `pnpm lint`                                           | 0    |                                                  |
+| `pnpm format:check`                                   | 0    |                                                  |
+| `pnpm typecheck`                                      | 0    | all packages                                     |
+| `pnpm test`                                           | 0    | 447 unit tests                                   |
+| `pnpm eval:validate-data`                             | 0    | 80 cases, 44 critical, sha256 `e02ae60e…cf1d`    |
+| `pnpm tickets:validate-taxonomy`                      | 0    | 15 / 67 / 80 / 9, sha256 `3dd4e05a…9608`         |
+| `pnpm tickets:coverage -- --check`                    | 0    | crosswalk document current                       |
+| `pnpm db:migrate`, `pnpm seed`                        | 0    |                                                  |
+| `pnpm test:integration`                               | 0    | 58 tests (db 8, runner 19, api 31)               |
+| `pnpm eval:run -- --agent reference-v1`               | 0    | PASS                                             |
+| `pnpm demo`                                           | 0    | PASS, BLOCK, PASS; agent source hashes unchanged |
+| `pnpm alerts:check`                                   | 0    | 1 firing then resolved, 0 open                   |
+| `pnpm tickets:demo`                                   | 0    | leak self-check clean                            |
+| `pnpm scan:sensitive`                                 | 0    | 0 findings                                       |
+| `playwright install --with-deps chromium`, `test:e2e` | 0    | 4 browser tests                                  |
+
+The screenshots in `docs/images/` and the sample reports in [`docs/demo/`](demo/) come from the same check on commit [`5b89a68`][5b89a68], where `pnpm --filter @srl/web screenshots` also exited 0. Nothing in the UI, agents, graders, or gate has changed since, and the agent source hashes match.
 
 An earlier run of this check, on the milestone 09 commit, caught a real problem: two Markdown files committed without Prettier formatting, which would have failed CI's format step. The fix was folded into that commit before anything was pushed.
 
