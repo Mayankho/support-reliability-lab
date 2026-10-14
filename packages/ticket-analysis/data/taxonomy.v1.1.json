@@ -1,0 +1,1755 @@
+{
+  "taxonomyVersion": "issue-taxonomy-v1.1",
+  "reviewStatus": "draft_not_independently_adjudicated",
+  "description": "Support issue taxonomy used by the ticket-analysis package to classify synthetic support conversations. Draft: not independently reviewed, not a gold label set, not a measurement of any production system, and not any company’s support policy.",
+  "contents": "Definitions only. No customer messages, ticket identifiers, names, contact details, credentials, volumes, or response metrics.",
+  "metadataInterpretation": "Owner, priority, fix home, automation tier, maximum automation scope, and protected mutation flag are provisional triage metadata, never permission for a protected action.",
+  "classificationPrinciples": {
+    "primaryL2": "Select by the current central unresolved customer need; do not substitute severity, earliest topic, or first matching keyword.",
+    "secondaryL2": "At most one independently expressed additional need; never count keyword co-occurrence as verified multi-issue.",
+    "subjectBody": "Body/current customer turn has priority; subject supplies missing detail and breaks unresolved ties. Explicit conflict favors body and should be noted.",
+    "lastResortTieBreakGroups": [
+      [
+        "PRV"
+      ],
+      [
+        "TRS"
+      ],
+      [
+        "BIL",
+        "CRD"
+      ],
+      [
+        "ACC",
+        "API"
+      ],
+      [
+        "PRC",
+        "GEN",
+        "APP",
+        "WSP"
+      ],
+      [
+        "PLN",
+        "NET",
+        "FBK"
+      ],
+      [
+        "NSP"
+      ],
+      [
+        "UNK"
+      ]
+    ],
+    "riskFlags": "Assess regardless of primary/secondary L2; high-risk handling independent of label confidence.",
+    "l3": "Confirmed cause needs independent evidence; customer assertions alone are insufficient.",
+    "rootCause": "Default fix home is a hypothesis; confirm with diagnosis and trusted system evidence.",
+    "protectedMutation": "Neither automation tier nor maximum scope approves money, credits, account/access/entitlement or data mutations. This project has no action executor.",
+    "quality": "Evaluate exact-primary and acceptable-alternate agreement separately; independently score flag precision/recall against adjudicated synthetic labels. Abstain when unsupported."
+  },
+  "l1Domains": [
+    {
+      "code": "BIL",
+      "name": "Billing & Payments",
+      "scope": "Charges, refunds of money, cancellations, invoices, payment failures"
+    },
+    {
+      "code": "CRD",
+      "name": "Credits & Usage",
+      "scope": "Credit balance, deductions, grants, credit refunds, credit rules"
+    },
+    {
+      "code": "ACC",
+      "name": "Account & Access",
+      "scope": "Login, verification codes, password and 2FA, account changes"
+    },
+    {
+      "code": "TRS",
+      "name": "Trust, Safety & Abuse",
+      "scope": "Suspensions, exploit complaints, payment-dispute locks, content policy"
+    },
+    {
+      "code": "PRV",
+      "name": "Privacy, Security & Legal",
+      "scope": "Data requests, compromised accounts, disclosures, licensing, compliance"
+    },
+    {
+      "code": "GEN",
+      "name": "Generation & Output",
+      "scope": "Output quality, prompt adherence, audio, watermark"
+    },
+    {
+      "code": "PRC",
+      "name": "Export, Upload & Processing",
+      "scope": "Job state, exports, uploads, sharing links"
+    },
+    {
+      "code": "APP",
+      "name": "App, Editor & Performance",
+      "scope": "Editor, mobile, playback, projects, notification and language settings"
+    },
+    {
+      "code": "API",
+      "name": "API & Developer",
+      "scope": "Keys, request errors, rate limits, webhooks, docs and SDK"
+    },
+    {
+      "code": "WSP",
+      "name": "Workspace, Team & Enterprise",
+      "scope": "Members, shared credits, enterprise accounts, SSO, collaboration"
+    },
+    {
+      "code": "PLN",
+      "name": "Plans, Pricing & Promotions",
+      "scope": "Pricing feedback, discounts, plan details"
+    },
+    {
+      "code": "NET",
+      "name": "Availability & Connectivity",
+      "scope": "Site access, outages, slowness"
+    },
+    {
+      "code": "FBK",
+      "name": "Product Feedback & How-to",
+      "scope": "Capability questions, feature requests, praise"
+    },
+    {
+      "code": "NSP",
+      "name": "Non-support & Misrouted",
+      "scope": "Careers, press and partners, festival, spam, prompts in the form"
+    },
+    {
+      "code": "UNK",
+      "name": "Unclassified",
+      "scope": "Needs more information, taxonomy candidates"
+    }
+  ],
+  "l2Issues": [
+    {
+      "code": "BIL-01",
+      "l1Code": "BIL",
+      "name": "Refund request (money)",
+      "definition": "Customer asks for money back for a payment.",
+      "useWhen": "The ask is a refund of a charge: a renewal they meant to cancel, an accidental purchase or upgrade, a service failure.",
+      "notThis": "Credits back for failed or disappointing generations go to CRD-01 or CRD-05. A charge after cancelling goes to BIL-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-MON",
+        "F-CHURN"
+      ]
+    },
+    {
+      "code": "BIL-02",
+      "l1Code": "BIL",
+      "name": "Unexpected or duplicate charge",
+      "definition": "Customer sees a charge they do not expect.",
+      "useWhen": "Two charges, a charge after cancelling, an unfamiliar charge, or a pending hold read as a charge.",
+      "notThis": "They understand the charge and want it refunded: BIL-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-MON",
+        "F-CHB"
+      ]
+    },
+    {
+      "code": "BIL-03",
+      "l1Code": "BIL",
+      "name": "Cancellation & subscription management",
+      "definition": "Customer wants to cancel, pause, or find the cancel control.",
+      "useWhen": "How to cancel, cancel before renewal, cancel a trial, pause a plan.",
+      "notThis": "Pricing opinion sent after cancelling goes to PLN-01 with flag F-CHURN. A refund of the last charge goes to BIL-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-CHURN",
+        "F-CHB"
+      ]
+    },
+    {
+      "code": "BIL-04",
+      "l1Code": "BIL",
+      "name": "Payment failed or declined",
+      "definition": "A payment attempt fails.",
+      "useWhen": "Card declined, bank blocks the first charge, method error, local method missing.",
+      "notThis": "Payment succeeded but the plan did not change: BIL-05.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-MON"
+      ]
+    },
+    {
+      "code": "BIL-05",
+      "l1Code": "BIL",
+      "name": "Paid but plan not active",
+      "definition": "Payment succeeded but the plan or entitlement did not update.",
+      "useWhen": "Charged and still on the old plan; an upgrade is stuck between payment and account.",
+      "notThis": "Credits missing after a top-up: CRD-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-MON"
+      ]
+    },
+    {
+      "code": "BIL-06",
+      "l1Code": "BIL",
+      "name": "Invoices & tax documents",
+      "definition": "Needs an invoice, receipt, or tax document in the right form.",
+      "useWhen": "Company name or tax ID missing, receipt history, regional format (VAT ID, GSTIN).",
+      "notThis": "The amount charged is wrong: BIL-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-REG"
+      ]
+    },
+    {
+      "code": "BIL-07",
+      "l1Code": "BIL",
+      "name": "Billing & renewal questions",
+      "definition": "Question about renewal date, timing, or proration.",
+      "useWhen": "When does my plan renew, in which time zone, what plan am I on.",
+      "notThis": "Wants a discount for paying yearly: PLN-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "CRD-01",
+      "l1Code": "CRD",
+      "name": "Credits charged incorrectly",
+      "definition": "Credits were deducted when they should not have been, or by the wrong amount.",
+      "useWhen": "Failed generation charged, retry charged again, cancelled job charged, cost charged differs from cost shown, unexplained drop.",
+      "notThis": "Unhappy with a completed result: CRD-05. Credits never arrived: CRD-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-MON"
+      ]
+    },
+    {
+      "code": "CRD-02",
+      "l1Code": "CRD",
+      "name": "Credits missing or not applied",
+      "definition": "Credits were expected and are not present.",
+      "useWhen": "Top-up paid but balance unchanged, monthly reset did not fire, referral or promo credits absent.",
+      "notThis": "Credits lost after a downgrade: CRD-04.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-MON"
+      ]
+    },
+    {
+      "code": "CRD-03",
+      "l1Code": "CRD",
+      "name": "Balance mismatch",
+      "definition": "Different balances shown on different surfaces.",
+      "useWhen": "Phone and desktop disagree, two balances on one account.",
+      "notThis": "The balance is simply lower than expected: CRD-01 or CRD-04.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "CRD-04",
+      "l1Code": "CRD",
+      "name": "Credits lost on plan change",
+      "definition": "Credits disappeared after a downgrade or plan switch.",
+      "useWhen": "Remaining credits expired when moving to a lower plan.",
+      "notThis": "Credits lost for no plan-change reason: CRD-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-CHURN"
+      ]
+    },
+    {
+      "code": "CRD-05",
+      "l1Code": "CRD",
+      "name": "Credit refund for a result",
+      "definition": "Wants credits back for a completed generation.",
+      "useWhen": "The job completed and the customer is unhappy with the output.",
+      "notThis": "The job failed: CRD-01. Someone else used the account: PRV-02.",
+      "candidateFixHome": "Policy",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-MON"
+      ]
+    },
+    {
+      "code": "CRD-06",
+      "l1Code": "CRD",
+      "name": "Credit policy & usage questions",
+      "definition": "How credits work.",
+      "useWhen": "Roll-over, expiry, cost per second, unlimited-plan counter, transfers.",
+      "notThis": "Credits are missing: CRD-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "ACC-01",
+      "l1Code": "ACC",
+      "name": "Login or verification code not arriving",
+      "definition": "Cannot log in because the emailed code or link does not arrive.",
+      "useWhen": "Code or magic link never lands, spam checked, repeated attempts.",
+      "notThis": "Password wrong or forgotten: ACC-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-REG"
+      ]
+    },
+    {
+      "code": "ACC-02",
+      "l1Code": "ACC",
+      "name": "Password, 2FA & identity verification",
+      "definition": "Reset a password or 2FA, or prove ownership.",
+      "useWhen": "Wrong password, reset 2FA, enable 2FA, verify identity to recover an account.",
+      "notThis": "Code not arriving: ACC-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-SEC"
+      ]
+    },
+    {
+      "code": "ACC-03",
+      "l1Code": "ACC",
+      "name": "Locked out, cause unknown",
+      "definition": "Cannot access the account and no reason is shown.",
+      "useWhen": "Login fails and the cause is not yet known. Reclassify once the cause is confirmed (TRS, PRV, ACC-01).",
+      "notThis": "The reason is stated (dispute, suspension): TRS-03 or TRS-01.",
+      "candidateFixHome": "Agent playbook",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-SEC"
+      ]
+    },
+    {
+      "code": "ACC-04",
+      "l1Code": "ACC",
+      "name": "Account changes",
+      "definition": "Change email, username, or display name; merge accounts.",
+      "useWhen": "Self-service changes and requests that need support.",
+      "notThis": "Two accounts suspended together: TRS-01.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "ACC-05",
+      "l1Code": "ACC",
+      "name": "Sessions & device limits",
+      "definition": "Unexpected logouts or device caps.",
+      "useWhen": "Keeps logging me out, session ends early, device limit reached.",
+      "notThis": "Cannot log in at all: ACC-01 to ACC-03.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "TRS-01",
+      "l1Code": "TRS",
+      "name": "Suspension & appeals",
+      "definition": "Account suspended or banned; asks why or appeals.",
+      "useWhen": "Suspension, ban, or appeal, including several accounts suspended together.",
+      "notThis": "Locked because of a payment dispute: TRS-03.",
+      "candidateFixHome": "Policy",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ABUSE"
+      ]
+    },
+    {
+      "code": "TRS-02",
+      "l1Code": "TRS",
+      "name": "Promo, referral & trial exploitation",
+      "definition": "Complaint that a promo, referral, or trial workaround stopped working.",
+      "useWhen": "Codes stopped stacking, self-referral stopped paying, a card is flagged as already associated.",
+      "notThis": "A genuine question about eligibility: PLN-02.",
+      "candidateFixHome": "Policy",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": [
+        "F-ABUSE"
+      ]
+    },
+    {
+      "code": "TRS-03",
+      "l1Code": "TRS",
+      "name": "Payment-dispute account lock",
+      "definition": "Account locked because the customer opened a payment dispute; asks to unlock.",
+      "useWhen": "Lock tied to a chargeback or payment review.",
+      "notThis": "Locked for another stated reason: TRS-01.",
+      "candidateFixHome": "Policy",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-CHB",
+        "F-SEC"
+      ]
+    },
+    {
+      "code": "TRS-04",
+      "l1Code": "TRS",
+      "name": "Content policy & moderation",
+      "definition": "Blocked prompt or output, or a policy notice.",
+      "useWhen": "Prompt blocked, output flagged, content warning.",
+      "notThis": "Account-level suspension: TRS-01.",
+      "candidateFixHome": "Policy",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "PRV-01",
+      "l1Code": "PRV",
+      "name": "Data deletion & access requests",
+      "definition": "Wants the account or data deleted or exported.",
+      "useWhen": "GDPR or CCPA style requests, close my account, erase my data.",
+      "notThis": "Wants to cancel billing only: BIL-03.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P1",
+      "typicalFlags": [
+        "F-LEG"
+      ]
+    },
+    {
+      "code": "PRV-02",
+      "l1Code": "PRV",
+      "name": "Compromised account or unauthorized use",
+      "definition": "Someone else used the account or payment method.",
+      "useWhen": "Account taken over, family member used it, charges the customer did not make.",
+      "notThis": "The customer made the generations and wants credits back: CRD-05.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P1",
+      "typicalFlags": [
+        "F-SEC",
+        "F-MON"
+      ]
+    },
+    {
+      "code": "PRV-03",
+      "l1Code": "PRV",
+      "name": "Security disclosure",
+      "definition": "Reports a vulnerability or security issue.",
+      "useWhen": "Vulnerability, responsible disclosure.",
+      "notThis": "A customer's own key pasted in a ticket is a flag (F-SEC), not this L2.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P1",
+      "typicalFlags": [
+        "F-SEC"
+      ]
+    },
+    {
+      "code": "PRV-04",
+      "l1Code": "PRV",
+      "name": "Licensing & commercial use",
+      "definition": "Asks about rights to sell or monetize outputs.",
+      "useWhen": "Can I sell it, license terms, commercial use.",
+      "notThis": "Content policy block: TRS-04.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "PRV-05",
+      "l1Code": "PRV",
+      "name": "Compliance & legal requests",
+      "definition": "Compliance paperwork or legal notices.",
+      "useWhen": "DPA, security questionnaire, subpoena, tax exemption.",
+      "notThis": "Data deletion: PRV-01.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-LEG",
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "GEN-01",
+      "l1Code": "GEN",
+      "name": "Output quality",
+      "definition": "Visual defects or wrong framing in a completed output.",
+      "useWhen": "Blur, artifacts, color tint, cropping, preview differs from final.",
+      "notThis": "The job did not complete: PRC-01.",
+      "candidateFixHome": "Agent playbook",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "GEN-02",
+      "l1Code": "GEN",
+      "name": "Prompt adherence & controls",
+      "definition": "Output ignores the prompt, or a needed control is missing.",
+      "useWhen": "Ignored instructions, character limits, negative prompts, camera controls.",
+      "notThis": "A request for a brand-new control: FBK-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "GEN-03",
+      "l1Code": "GEN",
+      "name": "Audio & lip-sync",
+      "definition": "Audio missing or out of sync.",
+      "useWhen": "No sound in the output or export, lip-sync delay.",
+      "notThis": "Export fails entirely: PRC-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "GEN-04",
+      "l1Code": "GEN",
+      "name": "Watermark & branding",
+      "definition": "Questions or complaints about the watermark or logo on outputs.",
+      "useWhen": "Does it go away on upgrade, how to remove it.",
+      "notThis": "Pricing opinion: PLN-01.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "PRC-01",
+      "l1Code": "PRC",
+      "name": "Generation stuck, queued, or failed",
+      "definition": "A generation job does not complete.",
+      "useWhen": "Stuck at a percentage, queued for hours, failed with an error.",
+      "notThis": "An export that is stuck: PRC-02. If the customer's central ask is credits back, CRD-01 is primary and PRC-01 is secondary; if the stuck job is central and credits are only mentioned, PRC-01 is primary, CRD-01 is secondary, and F-MON is set.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "PRC-02",
+      "l1Code": "PRC",
+      "name": "Export problems",
+      "definition": "An export job is stuck, fails, or produces the wrong file.",
+      "useWhen": "Never finishes, wrong colors, no audio, wrong format.",
+      "notThis": "\"Can I export 4K at 24 fps?\" is a capability question: FBK-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "PRC-03",
+      "l1Code": "PRC",
+      "name": "Upload problems",
+      "definition": "Upload stuck or rejected.",
+      "useWhen": "Stuck at 99%, file rejected, large file fails.",
+      "notThis": "Export or generation issues: PRC-01 or PRC-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": []
+    },
+    {
+      "code": "PRC-04",
+      "l1Code": "PRC",
+      "name": "Sharing & links",
+      "definition": "A shared link is broken, expired, or not found for others.",
+      "useWhen": "Share link 404, not visible to recipients, expired.",
+      "notThis": "Docs link broken: API-05.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "APP-01",
+      "l1Code": "APP",
+      "name": "Editor bugs & crashes",
+      "definition": "Editor behaves incorrectly or crashes.",
+      "useWhen": "Timeline, scrubber, clips snapping back, freezes, crashes.",
+      "notThis": "Mobile-only issues: APP-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "APP-02",
+      "l1Code": "APP",
+      "name": "Mobile & tablet",
+      "definition": "Problems specific to phone or tablet.",
+      "useWhen": "Keyboard covers the prompt box, settings will not scroll, iPad behavior.",
+      "notThis": "Same issue on desktop: APP-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "APP-03",
+      "l1Code": "APP",
+      "name": "Playback & preview",
+      "definition": "Video will not play or preview fails.",
+      "useWhen": "Black screen, will not play.",
+      "notThis": "Preview differs from final output: GEN-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "APP-04",
+      "l1Code": "APP",
+      "name": "Projects & assets",
+      "definition": "Recover, organize, or download projects and assets.",
+      "useWhen": "Deleted a project by accident, folders, bulk download.",
+      "notThis": "Request for a new organization feature: FBK-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "APP-05",
+      "l1Code": "APP",
+      "name": "Notifications & localization",
+      "definition": "Existing settings for emails and interface language.",
+      "useWhen": "Too many emails, how to change the interface language.",
+      "notThis": "A new setting that does not exist (dark mode): FBK-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "API-01",
+      "l1Code": "API",
+      "name": "Keys & authentication",
+      "definition": "Requests fail authentication or a key stops working.",
+      "useWhen": "401s, key disabled or revoked.",
+      "notThis": "A rate limit: API-03.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-SEC",
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "API-02",
+      "l1Code": "API",
+      "name": "Request errors",
+      "definition": "Requests rejected as invalid.",
+      "useWhen": "400 responses, invalid parameters, a docs example that fails.",
+      "notThis": "Authentication failure: API-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "API-03",
+      "l1Code": "API",
+      "name": "Rate limits & quotas",
+      "definition": "Throttling or limit questions.",
+      "useWhen": "429s, throttled earlier than expected, wants a higher limit.",
+      "notThis": "Authentication failure: API-01.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "API-04",
+      "l1Code": "API",
+      "name": "Webhooks & callbacks",
+      "definition": "Webhooks do not arrive or retry.",
+      "useWhen": "Not firing, retries, timeouts.",
+      "notThis": "Request rejected before the job runs: API-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ENT",
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "API-05",
+      "l1Code": "API",
+      "name": "Docs, SDK & examples",
+      "definition": "Documentation, SDK, or example problems.",
+      "useWhen": "Docs example returns a different shape, SDK question, broken docs link.",
+      "notThis": "A request that fails: API-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "WSP-01",
+      "l1Code": "WSP",
+      "name": "Members & seats",
+      "definition": "Add or remove members and seats.",
+      "useWhen": "Remove button greyed out, add seats, roles.",
+      "notThis": "Shared credits and spend limits: WSP-02.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "WSP-02",
+      "l1Code": "WSP",
+      "name": "Shared credits & spend controls",
+      "definition": "Workspace credits drained or no per-person limits.",
+      "useWhen": "One member used the shared pool, asks for per-member caps, top-up for a team.",
+      "notThis": "Individual balance issues: CRD-01 to CRD-04.",
+      "candidateFixHome": "Product feedback",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + draft proposal (human approves)",
+      "protectedMutationTypicallyInvolved": true,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ENT",
+        "F-MON"
+      ]
+    },
+    {
+      "code": "WSP-03",
+      "l1Code": "WSP",
+      "name": "Enterprise account management",
+      "definition": "Account manager, contract, or purchase-order matters.",
+      "useWhen": "Account manager request, contract terms, PO.",
+      "notThis": "A routine invoice: BIL-06.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "WSP-04",
+      "l1Code": "WSP",
+      "name": "SSO & provisioning",
+      "definition": "Single sign-on and directory provisioning.",
+      "useWhen": "SSO, SAML, SCIM setup.",
+      "notThis": "Individual login issue: ACC-01 to ACC-03.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": [
+        "F-ENT"
+      ]
+    },
+    {
+      "code": "WSP-05",
+      "l1Code": "WSP",
+      "name": "Collaboration & client review",
+      "definition": "Commenting and client review needs.",
+      "useWhen": "Clients cannot comment without an account, review links.",
+      "notThis": "A partnership inquiry: NSP-02.",
+      "candidateFixHome": "Product feedback",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "PLN-01",
+      "l1Code": "PLN",
+      "name": "Pricing & value feedback",
+      "definition": "Opinion that price or value is poor, often after cancelling.",
+      "useWhen": "Overpriced, not worth it, \"just cancelled, it is the pricing\".",
+      "notThis": "A request to cancel: BIL-03.",
+      "candidateFixHome": "Product feedback",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": [
+        "F-CHURN"
+      ]
+    },
+    {
+      "code": "PLN-02",
+      "l1Code": "PLN",
+      "name": "Discounts & eligibility",
+      "definition": "Asks about a discount or whether they qualify.",
+      "useWhen": "Student or education pricing, annual discount, nonprofit.",
+      "notThis": "Exploit complaints: TRS-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "PLN-03",
+      "l1Code": "PLN",
+      "name": "Plan details & limits",
+      "definition": "What a plan or the free tier includes.",
+      "useWhen": "Free-tier credits, team plan, trial terms.",
+      "notThis": "How credits are consumed: CRD-06.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "NET-01",
+      "l1Code": "NET",
+      "name": "Connectivity (site will not load)",
+      "definition": "The site or app will not load on a particular network.",
+      "useWhen": "Works on cellular, fails on home wifi, connection reset.",
+      "notThis": "Site down for everyone: NET-02.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P2",
+      "typicalFlags": []
+    },
+    {
+      "code": "NET-02",
+      "l1Code": "NET",
+      "name": "Outage & incident reports",
+      "definition": "Site down or server errors.",
+      "useWhen": "Site down, 500 errors, something went wrong.",
+      "notThis": "Only fails on one network: NET-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P1",
+      "typicalFlags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "NET-03",
+      "l1Code": "NET",
+      "name": "Slow performance",
+      "definition": "The product is slow.",
+      "useWhen": "Laggy, slow to respond.",
+      "notThis": "A job that never finishes: PRC-01.",
+      "candidateFixHome": "Code",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "code": "FBK-01",
+      "l1Code": "FBK",
+      "name": "How-to & capability questions",
+      "definition": "Can I do X, how do I do X.",
+      "useWhen": "Formats, frame rates, length, where a setting lives.",
+      "notThis": "Something is broken: use the matching symptom L2. A how-to about a specific domain (cancel, add a member, change email) goes to that domain's L2 with intent set to question; FBK-01 is for general questions that fit no domain L2.",
+      "candidateFixHome": "KB / Docs",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "FBK-02",
+      "l1Code": "FBK",
+      "name": "Feature requests",
+      "definition": "Asks for something new.",
+      "useWhen": "New controls, integrations, shortcuts, dark mode, per-member caps.",
+      "notThis": "A bug in an existing feature: use the matching symptom L2.",
+      "candidateFixHome": "Product feedback",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "FBK-03",
+      "l1Code": "FBK",
+      "name": "Praise & no action needed",
+      "definition": "Thanks, or the issue resolved itself.",
+      "useWhen": "\"it's fine now\", thank you for fixing it.",
+      "notThis": "Thanks followed by a new problem: classify the problem.",
+      "candidateFixHome": "None",
+      "candidateAutomationTier": "A: Automation candidate",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "NSP-01",
+      "l1Code": "NSP",
+      "name": "Careers & recruiting",
+      "definition": "Job applications and recruiting messages.",
+      "useWhen": "Resumes, openings, internships.",
+      "notThis": "A customer asking about a job on the support team is still this.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "R: Route out",
+      "maxAutomationScope": "Classify + route",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "NSP-02",
+      "l1Code": "NSP",
+      "name": "Press, partnerships & affiliates",
+      "definition": "Press, partnership, and affiliate or creator program inquiries.",
+      "useWhen": "Press deadline, partnership, affiliate, creator program, sponsorship.",
+      "notThis": "Client review feature requests: WSP-05.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "R: Route out",
+      "maxAutomationScope": "Classify + route",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "NSP-03",
+      "l1Code": "NSP",
+      "name": "Festival & Studios",
+      "definition": "Film festival entries and status.",
+      "useWhen": "Submission status, festival deadlines.",
+      "notThis": "Product support questions.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "R: Route out",
+      "maxAutomationScope": "Classify + route",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "NSP-04",
+      "l1Code": "NSP",
+      "name": "Misdirected & spam",
+      "definition": "Not about the product, or unsolicited sales.",
+      "useWhen": "Wrong company, solicitation, SEO or lead-gen pitches.",
+      "notThis": "Anything about the product.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "R: Route out",
+      "maxAutomationScope": "Classify + route",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "NSP-05",
+      "l1Code": "NSP",
+      "name": "Prompts typed into the support form",
+      "definition": "A generation prompt typed into the support form.",
+      "useWhen": "The message is only a prompt, with no question or problem.",
+      "notThis": "An API customer pasting the failing request: API-02.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "R: Route out",
+      "maxAutomationScope": "Classify + route",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P4",
+      "typicalFlags": []
+    },
+    {
+      "code": "NSP-06",
+      "l1Code": "NSP",
+      "name": "Sales leads",
+      "definition": "Prospects asking for pricing or demos.",
+      "useWhen": "Volume pricing, talk to sales.",
+      "notThis": "Existing customers asking about plans: PLN-03.",
+      "candidateFixHome": "Route out",
+      "candidateAutomationTier": "R: Route out",
+      "maxAutomationScope": "Classify + route",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "UNK-01",
+      "l1Code": "UNK",
+      "name": "Insufficient information",
+      "definition": "No usable content, or a follow-up with no context.",
+      "useWhen": "Blank message, \"any update?\", \"help\". Ask one question, then reclassify within one business day.",
+      "notThis": "A follow-up on a classified thread inherits that thread's L2.",
+      "candidateFixHome": "Agent playbook",
+      "candidateAutomationTier": "B: AI-assisted",
+      "maxAutomationScope": "Classify + lookup + safe guidance",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    },
+    {
+      "code": "UNK-02",
+      "l1Code": "UNK",
+      "name": "New-issue candidate",
+      "definition": "Real content, but no L2 fits.",
+      "useWhen": "Use sparingly. Every use is a candidate for the monthly taxonomy review.",
+      "notThis": "Anything that fits an existing L2 even loosely.",
+      "candidateFixHome": "None",
+      "candidateAutomationTier": "C: Human-led",
+      "maxAutomationScope": "Human only",
+      "protectedMutationTypicallyInvolved": false,
+      "candidatePriority": "P3",
+      "typicalFlags": []
+    }
+  ],
+  "l3Options": [
+    {
+      "code": "BIL-01a",
+      "parentL2": "BIL-01",
+      "name": "Zero-usage renewal",
+      "distinguishingEvidence": "Charged on renewal, no usage this cycle",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-01b",
+      "parentL2": "BIL-01",
+      "name": "Accidental purchase or upgrade",
+      "distinguishingEvidence": "Customer did not mean to buy or change plan",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-01c",
+      "parentL2": "BIL-01",
+      "name": "Service-failure refund",
+      "distinguishingEvidence": "A failure on our side caused the loss",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-01d",
+      "parentL2": "BIL-01",
+      "name": "Policy exception",
+      "distinguishingEvidence": "Outside the rules; needs a decision",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "BIL-02a",
+      "parentL2": "BIL-02",
+      "name": "Pending authorization hold",
+      "distinguishingEvidence": "One charge settled, one is a hold that drops off",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "BIL-02b",
+      "parentL2": "BIL-02",
+      "name": "True duplicate",
+      "distinguishingEvidence": "Two settled charges for one purchase",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-02c",
+      "parentL2": "BIL-02",
+      "name": "Charged after cancellation",
+      "distinguishingEvidence": "Cancel was not honored before renewal",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-02d",
+      "parentL2": "BIL-02",
+      "name": "Unrecognized charge",
+      "distinguishingEvidence": "Customer cannot match it to a purchase",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "BIL-03a",
+      "parentL2": "BIL-03",
+      "name": "Cannot find cancel",
+      "distinguishingEvidence": "Control exists but is not discoverable",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-03b",
+      "parentL2": "BIL-03",
+      "name": "Cancel before renewal or trial end",
+      "distinguishingEvidence": "Time-bound, protect from a charge",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-03c",
+      "parentL2": "BIL-03",
+      "name": "Pause or hold",
+      "distinguishingEvidence": "Wants to keep the account but stop billing",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "BIL-04a",
+      "parentL2": "BIL-04",
+      "name": "Bank blocks first charge",
+      "distinguishingEvidence": "New-merchant block; retry or alternate method works",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "BIL-04b",
+      "parentL2": "BIL-04",
+      "name": "Card rejected by region or 3DS",
+      "distinguishingEvidence": "Repeats for one region or issuer",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-04c",
+      "parentL2": "BIL-04",
+      "name": "Checkout method error",
+      "distinguishingEvidence": "Error raised in our checkout",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-06a",
+      "parentL2": "BIL-06",
+      "name": "Missing company name or tax ID",
+      "distinguishingEvidence": "Details were not captured at checkout",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-06b",
+      "parentL2": "BIL-06",
+      "name": "Receipt history",
+      "distinguishingEvidence": "Needs past receipts, billing page shows only the current one",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "BIL-06c",
+      "parentL2": "BIL-06",
+      "name": "Regional format",
+      "distinguishingEvidence": "VAT-ID, GSTIN, or local invoice rules",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-01a",
+      "parentL2": "CRD-01",
+      "name": "Failed generation not refunded",
+      "distinguishingEvidence": "Refund did not trigger on task failure",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-01b",
+      "parentL2": "CRD-01",
+      "name": "Retry double-charge",
+      "distinguishingEvidence": "Retry creates a second debit",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-01c",
+      "parentL2": "CRD-01",
+      "name": "Charged for cancelled or queued job",
+      "distinguishingEvidence": "Debit taken for work that never ran",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-01d",
+      "parentL2": "CRD-01",
+      "name": "Cost shown differs from cost charged",
+      "distinguishingEvidence": "Price preview and debit disagree",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-01e",
+      "parentL2": "CRD-01",
+      "name": "Unexplained deduction",
+      "distinguishingEvidence": "Balance dropped with no job to match",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "CRD-02a",
+      "parentL2": "CRD-02",
+      "name": "Top-up not applied",
+      "distinguishingEvidence": "Payment settled, grant stuck in processing",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-02b",
+      "parentL2": "CRD-02",
+      "name": "Monthly reset did not fire",
+      "distinguishingEvidence": "Renewal paid, credit grant job missed",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-02c",
+      "parentL2": "CRD-02",
+      "name": "Referral or promo credit missing",
+      "distinguishingEvidence": "Reward not granted",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-02d",
+      "parentL2": "CRD-02",
+      "name": "Plan-upgrade grant missing",
+      "distinguishingEvidence": "Upgrade settled, new allowance not granted",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "CRD-05a",
+      "parentL2": "CRD-05",
+      "name": "Unhappy with result",
+      "distinguishingEvidence": "Completed job, quality complaint",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "CRD-05b",
+      "parentL2": "CRD-05",
+      "name": "Accidental generations",
+      "distinguishingEvidence": "Pet, child, or misclick queued jobs",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "ACC-01a",
+      "parentL2": "ACC-01",
+      "name": "Email provider not delivering",
+      "distinguishingEvidence": "Concentrated on one mail domain; record the domain",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "ACC-01b",
+      "parentL2": "ACC-01",
+      "name": "Code or link expired",
+      "distinguishingEvidence": "Arrives late or after expiry",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "ACC-01c",
+      "parentL2": "ACC-01",
+      "name": "Other channel",
+      "distinguishingEvidence": "SMS or authenticator",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "ACC-02a",
+      "parentL2": "ACC-02",
+      "name": "Password reset",
+      "distinguishingEvidence": "Self-serve reset",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "ACC-02b",
+      "parentL2": "ACC-02",
+      "name": "2FA reset",
+      "distinguishingEvidence": "Lost second factor, needs verification",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "ACC-02c",
+      "parentL2": "ACC-02",
+      "name": "Enable 2FA",
+      "distinguishingEvidence": "Wants more protection",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "ACC-02d",
+      "parentL2": "ACC-02",
+      "name": "Identity verification for recovery",
+      "distinguishingEvidence": "Ownership must be proven",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "ACC-03a",
+      "parentL2": "ACC-03",
+      "name": "Locked by automated check",
+      "distinguishingEvidence": "Risk system tripped",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "ACC-03b",
+      "parentL2": "ACC-03",
+      "name": "Repeated failed attempts",
+      "distinguishingEvidence": "Lockout threshold",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "ACC-03c",
+      "parentL2": "ACC-03",
+      "name": "Cause unknown",
+      "distinguishingEvidence": "Needs diagnosis",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "TRS-01a",
+      "parentL2": "TRS-01",
+      "name": "Multiple accounts for free credits",
+      "distinguishingEvidence": "Policy violation, suspensions stand",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "TRS-01b",
+      "parentL2": "TRS-01",
+      "name": "Usage-policy violation",
+      "distinguishingEvidence": "Human-reviewed decision",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "TRS-01c",
+      "parentL2": "TRS-01",
+      "name": "Automated false positive",
+      "distinguishingEvidence": "Reversible error; fast reversal matters",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "TRS-01d",
+      "parentL2": "TRS-01",
+      "name": "Reason not communicated",
+      "distinguishingEvidence": "Notice lacked the reason",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "TRS-02a",
+      "parentL2": "TRS-02",
+      "name": "Promo stacking",
+      "distinguishingEvidence": "Multiple codes on one order",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "TRS-02b",
+      "parentL2": "TRS-02",
+      "name": "Self-referral",
+      "distinguishingEvidence": "Referring own accounts",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "TRS-02c",
+      "parentL2": "TRS-02",
+      "name": "Trial reuse with multiple cards",
+      "distinguishingEvidence": "Repeated free trials",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "TRS-03a",
+      "parentL2": "TRS-03",
+      "name": "Dispute open",
+      "distinguishingEvidence": "Lock stands until it resolves",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "TRS-03b",
+      "parentL2": "TRS-03",
+      "name": "Dispute resolved, still locked",
+      "distinguishingEvidence": "Unlock did not follow",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "TRS-03c",
+      "parentL2": "TRS-03",
+      "name": "Identity verification requested",
+      "distinguishingEvidence": "Needs a secure verification flow, never a ticket",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRV-01a",
+      "parentL2": "PRV-01",
+      "name": "Deletion",
+      "distinguishingEvidence": "Erase account and data",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRV-01b",
+      "parentL2": "PRV-01",
+      "name": "Access or export",
+      "distinguishingEvidence": "Wants a copy of data",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRV-01c",
+      "parentL2": "PRV-01",
+      "name": "Marketing opt-out",
+      "distinguishingEvidence": "Stop communications only",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRV-02a",
+      "parentL2": "PRV-02",
+      "name": "Credentials compromised",
+      "distinguishingEvidence": "Third party gained access",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRV-02b",
+      "parentL2": "PRV-02",
+      "name": "Shared or family use",
+      "distinguishingEvidence": "Authorized by mistake",
+      "candidateFixHome": "Policy"
+    },
+    {
+      "code": "PRV-02c",
+      "parentL2": "PRV-02",
+      "name": "Payment fraud",
+      "distinguishingEvidence": "Card used without consent",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "GEN-01a",
+      "parentL2": "GEN-01",
+      "name": "Artifacts or blur",
+      "distinguishingEvidence": "Detail or sharpness defects",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "GEN-01b",
+      "parentL2": "GEN-01",
+      "name": "Color cast or tint",
+      "distinguishingEvidence": "Sudden color shift; check for a regression if clustered",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "GEN-01c",
+      "parentL2": "GEN-01",
+      "name": "Cropping or aspect",
+      "distinguishingEvidence": "Frame does not match the request",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "GEN-01d",
+      "parentL2": "GEN-01",
+      "name": "Preview differs from final",
+      "distinguishingEvidence": "Mismatch between preview and result",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRC-01a",
+      "parentL2": "PRC-01",
+      "name": "Stuck at a percentage",
+      "distinguishingEvidence": "Progress halts",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRC-01b",
+      "parentL2": "PRC-01",
+      "name": "Queued for long",
+      "distinguishingEvidence": "Wait before start, often tier-related",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "PRC-01c",
+      "parentL2": "PRC-01",
+      "name": "Failed with error",
+      "distinguishingEvidence": "Job ends in an error",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "APP-04a",
+      "parentL2": "APP-04",
+      "name": "Recover deleted",
+      "distinguishingEvidence": "Restore a project or asset",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "APP-04b",
+      "parentL2": "APP-04",
+      "name": "Organize or search",
+      "distinguishingEvidence": "Large libraries",
+      "candidateFixHome": "Product feedback"
+    },
+    {
+      "code": "APP-04c",
+      "parentL2": "APP-04",
+      "name": "Bulk export or download",
+      "distinguishingEvidence": "Many items at once",
+      "candidateFixHome": "Product feedback"
+    },
+    {
+      "code": "API-01a",
+      "parentL2": "API-01",
+      "name": "Key revoked after owner password reset",
+      "distinguishingEvidence": "Reset invalidates keys; send a notice",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "API-01b",
+      "parentL2": "API-01",
+      "name": "Removed from workspace",
+      "distinguishingEvidence": "Key belongs to a workspace the user left",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "API-01c",
+      "parentL2": "API-01",
+      "name": "Invalid or rotated key",
+      "distinguishingEvidence": "Wrong or replaced key",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "API-01d",
+      "parentL2": "API-01",
+      "name": "Key exposed in ticket",
+      "distinguishingEvidence": "Treat as compromised; rotate",
+      "candidateFixHome": "Agent playbook"
+    },
+    {
+      "code": "API-02a",
+      "parentL2": "API-02",
+      "name": "Parameter type or format",
+      "distinguishingEvidence": "String where an integer is expected",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "API-02b",
+      "parentL2": "API-02",
+      "name": "Unsupported value",
+      "distinguishingEvidence": "Value outside what the model allows",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "API-02c",
+      "parentL2": "API-02",
+      "name": "Docs example mismatch",
+      "distinguishingEvidence": "Docs and API disagree",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "API-03a",
+      "parentL2": "API-03",
+      "name": "Limit is per workspace, not per key",
+      "distinguishingEvidence": "Keys share one pool",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "API-03b",
+      "parentL2": "API-03",
+      "name": "Burst limit",
+      "distinguishingEvidence": "Short spikes trip the limit",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "API-03c",
+      "parentL2": "API-03",
+      "name": "Increase request",
+      "distinguishingEvidence": "Needs a contract change",
+      "candidateFixHome": "Route out"
+    },
+    {
+      "code": "API-04a",
+      "parentL2": "API-04",
+      "name": "Customer endpoint slow",
+      "distinguishingEvidence": "Timeouts on their side; return fast, process async",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "API-04b",
+      "parentL2": "API-04",
+      "name": "Delivery failure on our side",
+      "distinguishingEvidence": "Our delivery system failed",
+      "candidateFixHome": "Code"
+    },
+    {
+      "code": "API-04c",
+      "parentL2": "API-04",
+      "name": "Signature or configuration",
+      "distinguishingEvidence": "Setup error",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "NET-01a",
+      "parentL2": "NET-01",
+      "name": "Known router or DNS filter",
+      "distinguishingEvidence": "Record the router model; known blocklist behavior",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "NET-01b",
+      "parentL2": "NET-01",
+      "name": "VPN, proxy, or corporate firewall",
+      "distinguishingEvidence": "Managed network",
+      "candidateFixHome": "KB / Docs"
+    },
+    {
+      "code": "NET-01c",
+      "parentL2": "NET-01",
+      "name": "Unknown",
+      "distinguishingEvidence": "Needs network diagnostics",
+      "candidateFixHome": "Agent playbook"
+    }
+  ],
+  "riskFlags": [
+    {
+      "code": "F-SEC",
+      "meaning": "Secret, ID document, card number, or password pasted in the ticket",
+      "suggestedHandling": "Redact, rotate, and warn the customer. Raises priority to P1."
+    },
+    {
+      "code": "F-LEG",
+      "meaning": "Legal deadline running (deletion, access, notices)",
+      "suggestedHandling": "Owner and due date required"
+    },
+    {
+      "code": "F-MON",
+      "meaning": "Money-touching: a refund or credit grant may be needed",
+      "suggestedHandling": "Needs guardrails before any automatic action: per-action cap, frequency limit, audit trail, human approval until validated"
+    },
+    {
+      "code": "F-CHB",
+      "meaning": "Chargeback or dispute threatened or open",
+      "suggestedHandling": "Route to Risk before any refund decision"
+    },
+    {
+      "code": "F-ABUSE",
+      "meaning": "Suspected exploitation of a policy or promo",
+      "suggestedHandling": "Firm macro; do not escalate to engineering"
+    },
+    {
+      "code": "F-REG",
+      "meaning": "Regional or tax requirement (VAT ID, GSTIN, GDPR region)",
+      "suggestedHandling": "Regional template; legal check where needed"
+    },
+    {
+      "code": "F-OUT",
+      "meaning": "Possible incident: unusual volume on one L2 within an hour",
+      "suggestedHandling": "Page the owner; open an incident note"
+    },
+    {
+      "code": "F-CHURN",
+      "meaning": "Cancellation intent or value complaint",
+      "suggestedHandling": "Feed to VOC for Product and Growth"
+    },
+    {
+      "code": "F-ENT",
+      "meaning": "Enterprise or high-value account",
+      "suggestedHandling": "Tighter SLA and named owner"
+    }
+  ]
+}

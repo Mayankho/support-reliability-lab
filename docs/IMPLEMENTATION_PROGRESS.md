@@ -4,10 +4,17 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 10, documentation and walkthrough. The ten planned milestones are done.
-- **Next action:** the additive ticket-analysis package: a versioned issue taxonomy, a coverage crosswalk for the 80 cases, and conservative classification of synthetic support threads. It stays separate from the v1 gate.
+- **Last completed milestone:** T01, taxonomy registry and coverage crosswalk. The ten core milestones are done.
+- **Next action:** T02, thread parsing on synthetic conversations: bounded record validation that drops names and emails at the boundary, deterministic grouping and ordering, anomaly reporting, and quoted-history stripping.
 
 ## Log
+
+### T01: taxonomy registry and coverage crosswalk
+
+- Added `packages/ticket-analysis` with a byte-pinned registry (`issue-taxonomy-v1.1`: 15 domains, 67 issue types, 80 diagnostic options under 24 issue types, 9 flags) and validation that recomputes counts and checks references, prefixes, flag definitions, tie-break ranks, and scope and tier consistency.
+- Added a draft crosswalk for all 80 golden cases: 79 with a candidate primary issue type, 61 `covered`, 5 `partial`, 14 `needs_review`, touching 24 of 67 issue types. 16 P1 or P2 issue types have no case. Ten gaps are proposed by safety boundary; none has been authored.
+- Added `pnpm tickets:validate-taxonomy` and `pnpm tickets:coverage`, which renders `docs/TAXONOMY_COVERAGE_CROSSWALK.md`. A test fails if the document is stale.
+- Tests: 40, covering registry integrity (one-byte change, duplicates, unknown parents, missing flags, tie-break coverage, scope and tier mismatch, recomputed counts, values never echoed), crosswalk integrity (duplicate, missing, or unknown cases, category mismatch, inflated review status, dataset mismatch), and a boundary test in both directions.
 
 ### Milestone 10: documentation and walkthrough
 

@@ -82,6 +82,28 @@ README with architecture, setup commands, an example trace, screenshots, a five-
 
 **Closed by:** a clean-container clone works without keys, and every statement is verifiable and labeled synthetic.
 
+## Additive: ticket analysis
+
+A separate package, `packages/ticket-analysis`, for triaging synthetic support conversations against a versioned issue taxonomy and for mapping what the 80 golden cases cover. It is not part of the release gate. No core package imports it, and the v1 dataset, labels, contracts, and gate are unchanged. Design notes are in ADR-019 onward.
+
+| #   | Step                                               | Status  |
+| --- | -------------------------------------------------- | ------- |
+| T01 | Taxonomy registry and coverage crosswalk           | Done    |
+| T02 | Thread parsing on synthetic conversations          | Next    |
+| T03 | Conservative classification and independent flags  | Planned |
+| T04 | Gap-driven synthetic case pack (only if warranted) | Planned |
+| T05 | Demonstration and an optional local-only import    | Planned |
+
+**T01:** a byte-pinned registry (15 domains, 67 issue types, 80 diagnostic options, 9 risk flags) with recomputed counts and referential checks, and a draft crosswalk from each golden case to candidate issue types, flags, and the safety boundary it exercises. _Closed by:_ registry and crosswalk validation tests, and a generated crosswalk document that a test keeps in sync.
+
+**T02:** group message records into threads with deterministic ordering, report anomalies instead of hiding them, separate customer turns from agent replies, and strip quoted history. _Closed by:_ tests for ordering, duplicates, missing customers, agent-only threads, and malformed records rejected without echoing values.
+
+**T03:** classify the customer's central current need with one optional secondary issue, detect risk flags independently, confirm a diagnostic option only from trusted synthetic state, and abstain when the rules do not apply. _Closed by:_ tests for opposite primary issues on the same facts, body-versus-subject conflicts, flags under a benign primary, ambiguous refunds, unsupported languages, and prompt injection.
+
+**T04:** author new cases only for gaps the crosswalk shows, in a separately versioned dataset with independently reviewed labels. _Closed by:_ a reviewed pack that runs separately from the v1 gate, or a documented decision not to author one yet.
+
+**T05:** `pnpm tickets:demo` on invented conversations, showing grouping, classification, flags, unconfirmed root causes, redaction, and the difference between what a customer reports and what synthetic state confirms. _Closed by:_ the demo in CI with a self-check that no secret appears in its output.
+
 ## Open questions
 
 - The starter gold labels had one single-reviewer pass in milestone 02 (`docs/dataset/ANNOTATION_REVIEW.md`). Independent double annotation and adjudication have not happened, so `humanReviewStatus` stays `starter_labels_not_independently_adjudicated`. GEN-012's required citation is disputed and should be corrected in a future dataset version.

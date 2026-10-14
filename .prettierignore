@@ -11,3 +11,6 @@ apps/web/dist
 apps/web/playwright-report
 apps/web/test-results
 docs/demo
+packages/ticket-analysis/data
+packages/ticket-analysis/fixtures
+docs/TAXONOMY_COVERAGE_CROSSWALK.md

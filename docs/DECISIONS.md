@@ -189,3 +189,22 @@ The Playwright suite builds the UI and creates a dedicated database. It fills th
 - unauthenticated rejection (API `401` with a challenge, and a sign-in notice in the UI), a cross-tenant `404`, and expected values appearing only after a reviewer token is entered.
 
 CI runs it as a separate job and uploads the Playwright report.
+
+## ADR-019: The issue taxonomy lives in its own package and never feeds the gate
+
+The ticket-analysis work answers different questions from the evaluator: what a customer currently needs, which risk flags apply, and which existing cases test the matching safety boundary. It lives in `packages/ticket-analysis`, and a boundary test enforces the separation in both directions. The package cannot import the agent, graders, database, runner, or telemetry, and none of those, nor the API or UI, may import it. The v1 dataset, its labels, the `GoldenCase` contract, and the gate denominators are unchanged.
+
+Taxonomy issue types are not the agent's `Intent` enum. An issue type describes what a customer reported. An intent describes how the agent should behave under `SYN-POLICY-1`. The two are mapped only in the crosswalk, never in agent input.
+
+**Registry.** `data/taxonomy.v1.1.json` holds definitions only: 15 domains, 67 issue types, 80 optional diagnostic options, and 9 risk flags, with no customer text, identifiers, contact details, or volumes. It is pinned by SHA-256 in a manifest, like the golden dataset. Validation recomputes every count rather than trusting the manifest. It checks that:
+
+- every issue type has exactly one existing domain and a matching code prefix;
+- every diagnostic option has an existing parent;
+- every flag is defined, and every domain has exactly one tie-break rank;
+- `Human only` scopes sit on human-led tiers, and route-out scopes on route-out tiers.
+
+Owner, fix home, tier, priority, and automation scope are kept as provisional triage metadata. None of them is a permission, and the lab has no executor for any issue type.
+
+**Crosswalk.** `data/crosswalk.v1.json` maps each of the 80 golden cases to a candidate primary issue type, an optional secondary, acceptable alternates, candidate flags, and the safety boundaries the case exercises (for example `no_false_completion` or `tenant_isolation`). One author wrote it, so the file is `draft_single_author`, and validation rejects any record marked reviewed. Coverage statuses are judgments about boundaries, not prevalence. Mappings the author is unsure of are `needs_review`, with alternatives listed, and one case (ADV-006) has no defensible issue type at all.
+
+The gap list is chosen by boundary, not frequency. Of the ten gaps, two are better handled by ticket-analysis unit tests (multi-turn context and outage volume, which a single-message case cannot express), and eight are proposals for new cases that have not been written. `docs/TAXONOMY_COVERAGE_CROSSWALK.md` is rendered from the data, and a test fails if it is stale.

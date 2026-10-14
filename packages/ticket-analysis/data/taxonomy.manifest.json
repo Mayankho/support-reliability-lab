@@ -1,0 +1,7 @@
+{
+  "taxonomyVersion": "issue-taxonomy-v1.1",
+  "file": "taxonomy.v1.1.json",
+  "sha256": "3dd4e05a450e0d009470ad7175b54ba2b47568eca79ef37397660f21c4239608",
+  "counts": { "l1Domains": 15, "l2Issues": 67, "l3Options": 80, "riskFlags": 9 },
+  "reviewStatus": "draft_not_independently_adjudicated"
+}
