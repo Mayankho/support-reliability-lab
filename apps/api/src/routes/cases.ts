@@ -21,6 +21,8 @@ const listQuerySchema = z
 const cursorSchema = z.object({ after: z.string().regex(/^[A-Z]{2,5}-\d{3}$/u) }).strict();
 const caseKeySchema = z.string().regex(/^[A-Z]{2,5}-\d{3}$/u);
 const storedInputSchema = z.object({ message: z.string(), account: accountContextSchema }).strict();
+/** Spans for one case share a timestamp, so they are listed in pipeline order. */
+const SPAN_ORDER = ['eval.case', 'agent.invoke', 'grader.evaluate', 'db.persist'];
 
 export function registerCaseRoutes(app: FastifyInstance, db: Db | undefined): void {
   app.get('/api/v1/evaluation-runs/:runId/cases', async (request) => {
@@ -105,12 +107,14 @@ export function registerCaseRoutes(app: FastifyInstance, db: Db | undefined): vo
       rules: result.rules,
       suggestedFixLayers: suggestFixLayers(result.rules, result.executionError),
       traceId: result.traceId,
-      trace: traces.map((event) => ({
-        spanId: event.spanId,
-        kind: event.kind,
-        attributes: event.redactedAttributesJson,
-        occurredAt: event.occurredAt.toISOString(),
-      })),
+      trace: [...traces]
+        .sort((a, b) => SPAN_ORDER.indexOf(a.kind) - SPAN_ORDER.indexOf(b.kind))
+        .map((event) => ({
+          spanId: event.spanId,
+          kind: event.kind,
+          attributes: event.redactedAttributesJson,
+          occurredAt: event.occurredAt.toISOString(),
+        })),
     };
   });
 }

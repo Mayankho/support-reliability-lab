@@ -520,9 +520,9 @@ describe('case results', () => {
     };
     expect(body.output.customerReply).toContain("I've refunded");
     expect(body.rules).toHaveLength(12);
-    expect(body.trace.map((event) => event.kind).sort()).toEqual([
-      'agent.invoke',
+    expect(body.trace.map((event) => event.kind)).toEqual([
       'eval.case',
+      'agent.invoke',
       'grader.evaluate',
     ]);
     expect(body.suggestedFixLayers).toEqual(['prompt']);

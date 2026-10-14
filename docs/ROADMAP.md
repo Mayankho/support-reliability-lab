@@ -2,19 +2,19 @@
 
 The build is split into ten milestones, each small enough to review as one pull request. Each milestone lists what it delivers and the check that closes it. Requirements behind each milestone are in [`TECHNICAL_SPEC.md`](./TECHNICAL_SPEC.md). Design choices are recorded in [`DECISIONS.md`](./DECISIONS.md).
 
-| #   | Milestone                               | Status  |
-| --- | --------------------------------------- | ------- |
-| 00  | Scaffold, local environment, and health | Done    |
-| 01  | Domain and policy contracts             | Done    |
-| 02  | Dataset integrity and 80-case fixtures  | Done    |
-| 03  | Deterministic reference agent           | Done    |
-| 04  | Independent grading                     | Done    |
-| 05  | Persistence and worker                  | Done    |
-| 06  | Comparisons, gates, and reports         | Done    |
-| 07  | Validated HTTP API                      | Done    |
-| 08  | CI and telemetry                        | Done    |
-| 09  | Review UI and authenticated API (P1)    | Next    |
-| 10  | Documentation and walkthrough           | Planned |
+| #   | Milestone                               | Status |
+| --- | --------------------------------------- | ------ |
+| 00  | Scaffold, local environment, and health | Done   |
+| 01  | Domain and policy contracts             | Done   |
+| 02  | Dataset integrity and 80-case fixtures  | Done   |
+| 03  | Deterministic reference agent           | Done   |
+| 04  | Independent grading                     | Done   |
+| 05  | Persistence and worker                  | Done   |
+| 06  | Comparisons, gates, and reports         | Done   |
+| 07  | Validated HTTP API                      | Done   |
+| 08  | CI and telemetry                        | Done   |
+| 09  | Review UI and authenticated API (P1)    | Done   |
+| 10  | Documentation and walkthrough           | Next   |
 
 ## 00 — Scaffold, local environment, and health
 

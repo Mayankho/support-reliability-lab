@@ -7,3 +7,6 @@ docs/TECHNICAL_SPEC.md
 contracts
 fixtures
 packages/db/migrations
+apps/web/dist
+apps/web/playwright-report
+apps/web/test-results

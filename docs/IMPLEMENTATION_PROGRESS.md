@@ -4,10 +4,17 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 08, CI and telemetry.
-- **Next action:** milestone 09. JWT verification with `jose` against a local test issuer (signature, issuer, audience, expiry, algorithm), workspace scoping from claims with cross-tenant and malformed-token tests, reviewer-only expected values in case detail, then the four React views with a Playwright failure-drilldown test.
+- **Last completed milestone:** 09, review UI and authenticated API.
+- **Next action:** milestone 10. A five-minute walkthrough with screenshots, an evidence index that maps claims to files, tests, and commits, an example trace, and a fresh-clone check that the documented commands work without keys.
 
 ## Log
+
+### Milestone 09: review UI and authenticated API
+
+- Added `AUTH_MODE=jwt`: bearer tokens verified with `jose` against a local JWKS file (ES256 only, issuer, audience, expiry, subject), claims validated with Zod, one generic `401` with a `Bearer` challenge. Workspace comes only from the token; `viewer` reads, `reviewer` also enqueues and sees expected values. Local mode is refused in production and never shows gold labels. `pnpm auth:init` and `pnpm auth:token` provide a local test issuer.
+- Added `apps/web`: React 19 and Vite 8 views for run overview, comparison, case detail, and release decision, with Zod-validated responses, hash routes, a token field, and keyboard and screen-reader support. Case detail now lists trace spans in execution order.
+- Tests: 13 JWT unit tests (missing, valid, expired, wrong issuer or audience, unknown key, unsigned, HMAC, missing or malformed workspace, unknown role, viewer enqueue `403`), 4 JWT integration tests on real data (workspace scoping, cross-tenant `404` on run, cases, case, gate, and compare, reviewer-only labels, enqueue into the token workspace), UI formatting unit tests, and 4 Playwright tests run against a database filled by `pnpm demo`. All passed locally, and CI gained an `e2e` job.
+- Fixed while testing: a lint finding that account values could render as `[object Object]`, now formatted explicitly with a test.
 
 ### Milestone 08: CI and telemetry
 

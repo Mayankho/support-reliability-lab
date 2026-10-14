@@ -10,18 +10,18 @@ I built it around the problems a support systems engineering role deals with eve
 
 ## Status
 
-| Milestone                                                                  | State   |
-| -------------------------------------------------------------------------- | ------- |
-| Workspace, config validation, liveness endpoint, local Postgres, CI        | Done    |
-| Agent contracts and the `SYN-POLICY-1` registry                            | Done    |
-| Dataset integrity checks and gold-label review log for the 80-case fixture | Done    |
-| Three agent versions: reference, intentional regression, repair            | Done    |
-| Twelve independent graders with fail-closed error handling                 | Done    |
-| Postgres evidence store and leased worker with idempotent results          | Done    |
-| Fail-closed release gate, baseline comparison, JSON and HTML reports, demo | Done    |
-| Validated HTTP API with workspace-scoped reads and a background worker     | Done    |
-| CI release gate, OpenTelemetry traces and counters, alerts, secret scan    | Done    |
-| Review UI with JWT-scoped access                                           | Planned |
+| Milestone                                                                  | State |
+| -------------------------------------------------------------------------- | ----- |
+| Workspace, config validation, liveness endpoint, local Postgres, CI        | Done  |
+| Agent contracts and the `SYN-POLICY-1` registry                            | Done  |
+| Dataset integrity checks and gold-label review log for the 80-case fixture | Done  |
+| Three agent versions: reference, intentional regression, repair            | Done  |
+| Twelve independent graders with fail-closed error handling                 | Done  |
+| Postgres evidence store and leased worker with idempotent results          | Done  |
+| Fail-closed release gate, baseline comparison, JSON and HTML reports, demo | Done  |
+| Validated HTTP API with workspace-scoped reads and a background worker     | Done  |
+| CI release gate, OpenTelemetry traces and counters, alerts, secret scan    | Done  |
+| Review UI and JWT-scoped API access, with browser tests                    | Done  |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -96,6 +96,27 @@ curl -s http://127.0.0.1:3000/api/v1/evaluation-runs/<runId>/cases/REF-001 # cas
 
 Endpoints and error codes are documented in [`contracts/openapi.yaml`](contracts/openapi.yaml).
 
+### Review UI
+
+```bash
+pnpm dev                                  # terminal 1: API on 127.0.0.1:3000
+pnpm --filter @srl/web dev                # terminal 2: http://127.0.0.1:5173
+```
+
+The UI has four views: run overview with metrics and a filterable case table, paired comparison, case detail (input, expected versus actual, rule results, trace), and the release decision with blockers linked to their cases. It shows the gate the worker recorded and never computes one itself.
+
+### Requiring tokens
+
+Local mode (the default) treats every request as the `ws_demo` workspace and never shows gold labels. To require signed tokens:
+
+```bash
+pnpm auth:init                            # local ES256 key pair in .local-auth/ (git-ignored)
+# set AUTH_MODE=jwt and the JWT_* values it prints in .env, then restart the API
+pnpm -s auth:token -- --role reviewer     # short-lived token for ws_demo
+```
+
+Tokens are verified against the local key file only (ES256, issuer, audience, expiry). A `viewer` can read, a `reviewer` can also enqueue runs and see expected values, and another workspace's runs return `404`. Paste the token into the UI's token field to use it there. Browser tests: `E2E_DATABASE_URL=postgresql://app:app@localhost:5432/srl_e2e pnpm --filter @srl/web test:e2e` (creates and replaces that database).
+
 ### Monitoring and CI
 
 ```bash
@@ -109,7 +130,8 @@ Main CI gates `reference-v1` and runs the demo on every push, so it fails if the
 ## Repository layout
 
 ```text
-apps/api/              Fastify API: runs, cases, comparison, gate, metrics, readiness
+apps/api/              Fastify API: runs, cases, comparison, gate, metrics, readiness, JWT auth
+apps/web/              React review UI and Playwright browser tests
 packages/contracts/    Zod schemas for agent input/output and golden cases
 packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
 packages/dataset/      Fixture loader and eval:validate-data

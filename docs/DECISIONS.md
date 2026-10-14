@@ -152,3 +152,40 @@ The full sequence was rehearsed locally on a fresh database before committing: t
 Alerts are evaluated from recorded gates (`pnpm alerts:check`) against rules in `packages/telemetry/src/alerts.ts`: `CRITICAL_RULE_FAILURE`, `RUN_ERROR_SPIKE`, `EVAL_STALE_OR_MISSING`, and `LATENCY_REGRESSION`. Runs that have a baseline form one candidate track, so a blocked candidate followed by a passing one reads as firing then resolved. The firing event links to the first failing case, rule, and trace ID. The command writes a Markdown incident report and exits 1 while any alert is open. Nothing is sent to Slack, email, or a webhook.
 
 `pnpm scan:sensitive` scans tracked files and generated artifacts for private keys, common token formats, non-example email addresses, phone numbers, Luhn-valid card numbers, and connection strings with non-local passwords. It reports file, line, and kind, never the value. Four test files intentionally contain fake connection passwords to prove redaction; each is listed with the exact kind allowed, so any other finding in those files still fails.
+
+## ADR-017: Tokens are verified locally with `jose`; local mode stays unauthenticated and says so
+
+`AUTH_MODE` selects one of two principal resolvers behind the request hook from ADR-014, so no route changed.
+
+- **`local`** (the default) resolves every request to `ws_demo` and marks the principal as unauthenticated. Configuration refuses it when `NODE_ENV=production`.
+- **`jwt`** requires a `Bearer` token and verifies it with `jose` against a JWKS file named in configuration. Keys are never fetched from a URL, and nothing in the token header can choose the key source. Only ES256 is accepted, so unsigned (`alg: none`) and HMAC tokens fail even with valid-looking claims. Issuer, audience, expiry, and subject are required, with five seconds of clock tolerance. After signature checks, the claims are parsed with Zod: `workspace_id` must match `^ws_[a-z0-9_]{1,40}$` and `role` must be `viewer` or `reviewer`.
+
+Every failure returns the same `401 UNAUTHENTICATED` with a `www-authenticate: Bearer` header. The response never says which check failed. Health endpoints stay open for probes.
+
+Authorization is deliberately small:
+
+- The workspace always comes from the verified token. Request bodies cannot name one, and another workspace's run, cases, gate, or comparison returns `404`, as in ADR-014.
+- `viewer` can read; enqueueing a run requires `reviewer` and returns `403` before the body is read.
+- Gold labels in case detail are diagnostic data, shown only to an authenticated `reviewer`. Local mode never shows them, because nobody in local mode has proven who they are.
+
+`pnpm auth:init` writes a local ES256 key pair to the git-ignored `.local-auth/` (private key mode `0600`), and `pnpm auth:token` signs short-lived development tokens. This is a test issuer, not an identity provider. A real deployment would point `JWT_JWKS_FILE` at keys managed by its identity provider and add rotation, revocation, and a session layer, none of which exist here.
+
+Covered by unit tests for missing, expired, wrong-issuer, wrong-audience, unknown-key, unsigned, HMAC, missing-workspace, malformed-workspace, and unknown-role tokens, and by integration tests on real data for workspace scoping, cross-tenant `404`s, reviewer-only labels, and enqueue into the token's workspace.
+
+## ADR-018: The review UI is a thin, read-only client of the API
+
+`apps/web` is React 19 and Vite 8 with four views: run overview (status, gate, metrics with denominators, a filterable case table), paired comparison, case detail (input, expected versus actual, rule results, trace, suggested fix layer), and release decision (gate status, blockers linked to their cases, thresholds, pinned hashes, source commit).
+
+- **No logic of its own.** The UI shows the gate that the worker recorded; it never computes or reinterprets a verdict. Every response is parsed with Zod, so a contract drift shows as an error instead of a wrong number.
+- **No router or state library.** Hash routes cover four views, and IDs are validated with the same patterns the API uses before any request is made. A small fetch hook handles loading, error, and `401` states.
+- **Tokens stay in the tab.** In `jwt` mode the reviewer pastes a token, which is kept in `sessionStorage` and sent as a bearer header. The UI holds no keys and has no login flow, matching the scope in ADR-017.
+- **Accessible by default.** Gate states carry words as well as color, tables use real headers, there is a skip link, focus moves to the main region on navigation, and the case filter works from the keyboard.
+
+The Playwright suite builds the UI and creates a dedicated database. It fills that database with `pnpm demo`'s real three-run sequence rather than mocked responses. Then it starts the API in both auth modes and checks:
+
+- the failure drilldown from a blocked run to `REF-001` and its `NO_FALSE_COMPLETION` evidence;
+- the release decision and comparison;
+- keyboard filtering;
+- unauthenticated rejection (API `401` with a challenge, and a sign-in notice in the UI), a cross-tenant `404`, and expected values appearing only after a reviewer token is entered.
+
+CI runs it as a separate job and uploads the Playwright report.
