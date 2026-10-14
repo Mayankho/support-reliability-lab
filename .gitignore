@@ -6,6 +6,9 @@ coverage/
 !.env.example
 artifacts/*
 !artifacts/.gitkeep
+.local-auth/
+playwright-report/
+test-results/
 *.log
 *.tsbuildinfo
 .DS_Store

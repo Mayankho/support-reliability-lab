@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getRun, listRuns, runSummary, type Db, type RunRecord } from '@srl/db';
 import { compareRuns, computeMetrics, gateArtifactSchema } from '@srl/evals';
 import { DEFAULT_RUN_CONFIG, RunRequestError, buildReportFromDb, enqueueRun } from '@srl/runner';
+import { requireRole } from '../auth.ts';
 import { parseRunId, requireDb, uuidSchema } from '../context.ts';
 import { ApiError, notFound } from '../errors.ts';
 import { decodeCursor, encodeCursor, limitSchema } from '../pagination.ts';
@@ -93,6 +94,7 @@ export function registerRunRoutes(
   limiter: RateLimiter,
 ): void {
   app.post('/api/v1/evaluation-runs', async (request, reply) => {
+    requireRole(request.principal, 'reviewer');
     const body = createRunBodySchema.parse(request.body);
     limiter.check(`runs:${request.workspaceId}`);
     let runId: string;

@@ -84,6 +84,9 @@ export function registerErrorHandling(app: FastifyInstance): void {
       message: apiError.message,
       correlationId: request.id,
     };
+    if (apiError.statusCode === 401) {
+      void reply.header('www-authenticate', 'Bearer');
+    }
     void reply.status(apiError.statusCode).send(body);
   });
 

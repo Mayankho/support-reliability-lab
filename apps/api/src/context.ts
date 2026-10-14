@@ -1,29 +1,27 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Db } from '@srl/db';
+import { LOCAL_PRINCIPAL, type Principal, type PrincipalResolver } from './auth.ts';
 import { ApiError } from './errors.ts';
 
 declare module 'fastify' {
   interface FastifyRequest {
+    principal: Principal;
     workspaceId: string;
   }
 }
 
-export const LOCAL_WORKSPACE_ID = 'ws_demo';
-
-export interface WorkspaceResolver {
-  (request: FastifyRequest): Promise<string> | string;
-}
-
-/** Local P0 mode: every request acts in the single demo workspace. Replaced by JWT claims when auth is on. */
-export const localWorkspace: WorkspaceResolver = () => LOCAL_WORKSPACE_ID;
-
-export function registerWorkspaceContext(app: FastifyInstance, resolve: WorkspaceResolver): void {
+/** Resolves who is calling before any `/api/` route runs; routes read only `request.principal`. */
+export function registerPrincipalContext(app: FastifyInstance, resolve: PrincipalResolver): void {
+  app.decorateRequest('principal', null as unknown as Principal);
   app.decorateRequest('workspaceId', '');
   app.addHook('onRequest', async (request) => {
-    if (request.url.startsWith('/api/')) {
-      request.workspaceId = await resolve(request);
+    if (!request.url.startsWith('/api/')) {
+      request.principal = LOCAL_PRINCIPAL;
+      return;
     }
+    request.principal = await resolve(request);
+    request.workspaceId = request.principal.workspaceId;
   });
 }
 

@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { RULE_IDS, RULE_VERDICTS, CASE_STATUSES, accountContextSchema } from '@srl/contracts';
-import { listTraceEvents, loadCaseInputs, loadRunResults, type Db } from '@srl/db';
+import { listTraceEvents, loadCaseInputs, loadCaseLabels, loadRunResults, type Db } from '@srl/db';
 import { redactForReport, suggestFixLayers } from '@srl/evals';
+import { canSeeExpected } from '../auth.ts';
 import { requireDb } from '../context.ts';
 import { notFound } from '../errors.ts';
 import { decodeCursor, encodeCursor, limitSchema } from '../pagination.ts';
@@ -86,8 +87,12 @@ export function registerCaseRoutes(app: FastifyInstance, db: Db | undefined): vo
     if (input === undefined) throw notFound();
     const parsedInput = storedInputSchema.parse(input.input);
     const traces = await listTraceEvents(database, run.id, result.caseId);
+    const expected = canSeeExpected(request.principal)
+      ? ((await loadCaseLabels(database, run.datasetId)).get(result.caseId) ?? null)
+      : undefined;
 
     return {
+      ...(expected === undefined ? {} : { expected }),
       runId: run.id,
       caseId: result.caseKey,
       category: result.category,

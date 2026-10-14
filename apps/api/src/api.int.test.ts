@@ -7,6 +7,7 @@ import {
   connect,
   createRun,
   createTestDatabase,
+  getRun,
   importDataset,
   registerAgentVersion,
   sql,
@@ -14,7 +15,15 @@ import {
 } from '@srl/db';
 import { enqueueRun, evaluateAndGate, loadVerifiedDataset, runUntilFinished } from '@srl/runner';
 import { buildApp } from './app.ts';
+import { jwtPrincipal } from './auth.ts';
 import { loadConfig } from './config.ts';
+import {
+  DEV_AUDIENCE,
+  DEV_ISSUER,
+  generateDevKeyPair,
+  signDevToken,
+  type DevKeyPair,
+} from './dev-auth.ts';
 import { createRateLimiter } from './rate-limit.ts';
 
 const config = loadConfig({
@@ -551,6 +560,105 @@ describe('metrics summary', () => {
       caseCount: 80,
       casesWithCriticalFailures: 5,
     });
+  });
+});
+
+describe('JWT-scoped access to real data', () => {
+  let secured: FastifyInstance;
+  let pair: DevKeyPair;
+  const bearer = async (workspaceId: string, role: 'viewer' | 'reviewer') => ({
+    authorization: `Bearer ${await signDevToken(pair.privateJwk, { subject: `${role}-${workspaceId}`, workspaceId, role })}`,
+  });
+
+  beforeAll(async () => {
+    pair = await generateDevKeyPair();
+    secured = buildApp(config, {
+      logger: false,
+      database: testDb.handle,
+      resolvePrincipal: jwtPrincipal({
+        issuer: DEV_ISSUER,
+        audience: DEV_AUDIENCE,
+        jwks: pair.jwks,
+      }),
+    });
+  });
+
+  afterAll(async () => {
+    await secured.close();
+  });
+
+  it('scopes reads to the workspace in the verified token', async () => {
+    const demo = (
+      await secured.inject({
+        url: '/api/v1/evaluation-runs?limit=100',
+        headers: await bearer('ws_demo', 'viewer'),
+      })
+    ).json() as {
+      items: Array<{ id: string }>;
+    };
+    const other = (
+      await secured.inject({
+        url: '/api/v1/evaluation-runs?limit=100',
+        headers: await bearer('ws_other', 'viewer'),
+      })
+    ).json() as {
+      items: Array<{ id: string }>;
+    };
+    expect(demo.items.map((item) => item.id)).toContain(ids.reference);
+    expect(other.items.map((item) => item.id)).toEqual([ids.other]);
+  });
+
+  it('returns 404, not 403, for another workspace’s run, case, gate, or comparison', async () => {
+    const headers = await bearer('ws_other', 'reviewer');
+    for (const url of [
+      `/api/v1/evaluation-runs/${ids.regression}`,
+      `/api/v1/evaluation-runs/${ids.regression}/cases`,
+      `/api/v1/evaluation-runs/${ids.regression}/cases/REF-001`,
+      `/api/v1/evaluation-runs/${ids.regression}/gate`,
+      `/api/v1/evaluation-runs/${ids.regression}/compare?baselineRunId=${ids.reference}`,
+    ]) {
+      const response = await secured.inject({ url, headers });
+      expect(response.statusCode).toBe(404);
+      expect(response.body).not.toContain(ids.regression);
+    }
+  });
+
+  it('shows expected values only to an authenticated reviewer', async () => {
+    const asReviewer = (
+      await secured.inject({
+        url: `/api/v1/evaluation-runs/${ids.regression}/cases/REF-001`,
+        headers: await bearer('ws_demo', 'reviewer'),
+      })
+    ).json() as { expected?: { decision: string; proposedAction: string } };
+    const asViewer = (
+      await secured.inject({
+        url: `/api/v1/evaluation-runs/${ids.regression}/cases/REF-001`,
+        headers: await bearer('ws_demo', 'viewer'),
+      })
+    ).json() as Record<string, unknown>;
+    const local = (
+      await app.inject(`/api/v1/evaluation-runs/${ids.regression}/cases/REF-001`)
+    ).json() as Record<string, unknown>;
+
+    expect(asReviewer.expected).toMatchObject({
+      decision: 'propose_action',
+      proposedAction: 'request_refund_review',
+    });
+    expect(asViewer).not.toHaveProperty('expected');
+    expect(local).not.toHaveProperty('expected');
+  });
+
+  it('enqueues runs into the token workspace, never one named in the body', async () => {
+    const response = await secured.inject({
+      method: 'POST',
+      url: '/api/v1/evaluation-runs',
+      headers: await bearer('ws_other', 'reviewer'),
+      payload: { datasetVersion: 'v1', agentVersion: 'reference-v1', runMode: 'offline' },
+    });
+    const { runId } = response.json() as { runId: string };
+    const run = await getRun(testDb.handle.db, runId);
+    expect(response.statusCode).toBe(202);
+    expect(run?.workspaceId).toBe('ws_other');
   });
 });
 

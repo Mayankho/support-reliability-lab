@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { DbHandle } from '@srl/db';
 import { REDACT_PATHS, SpanStatusCode, startChildSpan, type Span } from '@srl/telemetry';
+import { jwtPrincipal, localPrincipal, readJwks, type PrincipalResolver } from './auth.ts';
 import type { AppConfig } from './config.ts';
-import { localWorkspace, registerWorkspaceContext, type WorkspaceResolver } from './context.ts';
+import { registerPrincipalContext } from './context.ts';
 import { registerErrorHandling } from './errors.ts';
 import { createRateLimiter, type RateLimiter } from './rate-limit.ts';
 import { registerCaseRoutes } from './routes/cases.ts';
@@ -20,7 +21,17 @@ export interface BuildAppOptions {
   logger?: FastifyServerOptions['logger'];
   database?: DbHandle;
   rateLimiter?: RateLimiter;
-  resolveWorkspace?: WorkspaceResolver;
+  resolvePrincipal?: PrincipalResolver;
+}
+
+function principalResolverFor(config: AppConfig): PrincipalResolver {
+  return config.AUTH.mode === 'jwt'
+    ? jwtPrincipal({
+        issuer: config.AUTH.issuer,
+        audience: config.AUTH.audience,
+        jwks: readJwks(config.AUTH.jwksFile),
+      })
+    : localPrincipal;
 }
 
 export function buildApp(config: AppConfig, options: BuildAppOptions = {}): FastifyInstance {
@@ -66,7 +77,7 @@ export function buildApp(config: AppConfig, options: BuildAppOptions = {}): Fast
   });
 
   registerErrorHandling(app);
-  registerWorkspaceContext(app, options.resolveWorkspace ?? localWorkspace);
+  registerPrincipalContext(app, options.resolvePrincipal ?? principalResolverFor(config));
 
   const db = options.database?.db;
   registerHealthRoutes(app, options.database);

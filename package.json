@@ -22,6 +22,8 @@
     "demo": "node packages/runner/src/cli/demo.ts",
     "worker": "node packages/runner/src/cli/worker.ts",
     "alerts:check": "node packages/runner/src/cli/alerts-check.ts",
+    "auth:init": "node apps/api/src/cli/auth-dev.ts init",
+    "auth:token": "node apps/api/src/cli/auth-dev.ts token",
     "scan:sensitive": "node packages/dataset/src/cli/scan-sensitive.ts"
   },
   "devDependencies": {

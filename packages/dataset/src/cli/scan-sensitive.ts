@@ -11,10 +11,24 @@ const SKIP = [/^pnpm-lock\.yaml$/u, /\.(png|jpg|jpeg|gif|webp|ico|woff2?|docx|pd
  * Test files deliberately contain fake credential-shaped strings to prove redaction works. Each entry
  * names the file and the kind, so a new kind of finding in the same file still fails the scan.
  */
+const SCANNER_FIXTURE_KINDS: ReadonlyArray<ScanFinding['kind']> = [
+  'private_key',
+  'access_token',
+  'email',
+  'phone',
+  'payment_card',
+  'connection_password',
+];
+
 const REVIEWED_TEST_FIXTURES: ReadonlyArray<{ path: RegExp; kind: ScanFinding['kind'] }> = [
   { path: /^apps\/api\/src\/(config|api\.int)\.test\.ts$/u, kind: 'connection_password' },
   { path: /^packages\/db\/src\/cli\/env\.test\.ts$/u, kind: 'connection_password' },
   { path: /^packages\/telemetry\/src\/telemetry\.test\.ts$/u, kind: 'connection_password' },
+  // The scanner's own tests must contain one example of every kind it detects.
+  ...SCANNER_FIXTURE_KINDS.map((kind) => ({
+    path: /^packages\/dataset\/src\/scan\.test\.ts$/u,
+    kind,
+  })),
 ];
 
 function trackedFiles(): string[] {

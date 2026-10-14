@@ -24,8 +24,30 @@ export const envSchema = z
     EVAL_MAX_CASES: integerStringSchema,
     OTEL_EXPORTER: z.enum(['console', 'none']),
     LOG_LEVEL: logLevelSchema,
+    AUTH_MODE: z.enum(['local', 'jwt']),
+    JWT_ISSUER: z.string().min(1).max(200).optional(),
+    JWT_AUDIENCE: z.string().min(1).max(200).optional(),
+    JWT_JWKS_FILE: z.string().min(1).max(500).optional(),
   })
   .superRefine((value, context) => {
+    if (value.AUTH_MODE === 'jwt') {
+      for (const field of ['JWT_ISSUER', 'JWT_AUDIENCE', 'JWT_JWKS_FILE'] as const) {
+        if (value[field] === undefined) {
+          context.addIssue({
+            code: 'custom',
+            path: [field],
+            message: 'is required when AUTH_MODE=jwt',
+          });
+        }
+      }
+    }
+    if (value.AUTH_MODE === 'local' && value.NODE_ENV === 'production') {
+      context.addIssue({
+        code: 'custom',
+        path: ['AUTH_MODE'],
+        message: 'must be jwt in production. Local mode has no authentication.',
+      });
+    }
     addRangeIssue(context, 'PORT', value.PORT, 1, 65_535);
     addRangeIssue(context, 'EVAL_MAX_CONCURRENCY', value.EVAL_MAX_CONCURRENCY, 1, 16);
     addRangeIssue(context, 'EVAL_CASE_TIMEOUT_MS', value.EVAL_CASE_TIMEOUT_MS, 1, 60_000);
@@ -64,8 +86,9 @@ const envDefaults = {
   EVAL_MAX_CONCURRENCY: '4',
   EVAL_CASE_TIMEOUT_MS: '5000',
   EVAL_MAX_CASES: '100',
-  OTEL_EXPORTER: 'console',
+  OTEL_EXPORTER: 'none',
   LOG_LEVEL: 'info',
+  AUTH_MODE: 'local',
 } as const;
 
 const envKeys = [
@@ -81,6 +104,10 @@ const envKeys = [
   'EVAL_MAX_CASES',
   'OTEL_EXPORTER',
   'LOG_LEVEL',
+  'AUTH_MODE',
+  'JWT_ISSUER',
+  'JWT_AUDIENCE',
+  'JWT_JWKS_FILE',
 ] as const;
 
 export type EnvKey = (typeof envKeys)[number];
@@ -98,7 +125,11 @@ export interface AppConfig {
   EVAL_MAX_CASES: number;
   OTEL_EXPORTER: 'console' | 'none';
   LOG_LEVEL: z.infer<typeof logLevelSchema>;
+  AUTH: AuthConfig;
 }
+
+export type AuthConfig =
+  { mode: 'local' } | { mode: 'jwt'; issuer: string; audience: string; jwksFile: string };
 
 export class ConfigError extends Error {
   readonly issues: readonly string[];
@@ -141,6 +172,15 @@ export function loadConfig(source: Readonly<Record<string, string | undefined>>)
     EVAL_MAX_CASES: Number(parsed.data.EVAL_MAX_CASES),
     OTEL_EXPORTER: parsed.data.OTEL_EXPORTER,
     LOG_LEVEL: parsed.data.LOG_LEVEL,
+    AUTH:
+      parsed.data.AUTH_MODE === 'jwt'
+        ? {
+            mode: 'jwt',
+            issuer: parsed.data.JWT_ISSUER ?? '',
+            audience: parsed.data.JWT_AUDIENCE ?? '',
+            jwksFile: parsed.data.JWT_JWKS_FILE ?? '',
+          }
+        : { mode: 'local' },
   };
 }
 

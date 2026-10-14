@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigError, loadConfig, type EnvKey } from './config.ts';
 
-function validEnv(overrides: Partial<Record<EnvKey, string>> = {}): Record<EnvKey, string> {
+function validEnv(
+  overrides: Partial<Record<EnvKey, string>> = {},
+): Partial<Record<EnvKey, string>> {
   return {
+    AUTH_MODE: 'local',
     NODE_ENV: 'test',
     PORT: '3000',
     DATABASE_URL: 'postgresql://app:app@localhost:5432/support_reliability',
@@ -36,7 +39,30 @@ describe('loadConfig', () => {
       EVAL_MAX_CASES: 100,
       OTEL_EXPORTER: 'console',
       LOG_LEVEL: 'silent',
+      AUTH: { mode: 'local' },
     });
+  });
+
+  it('requires issuer, audience, and a local key set when AUTH_MODE=jwt', () => {
+    expect(() => loadConfig(validEnv({ AUTH_MODE: 'jwt' }))).toThrow(
+      /JWT_ISSUER: is required when AUTH_MODE=jwt; JWT_AUDIENCE: is required when AUTH_MODE=jwt; JWT_JWKS_FILE: is required/,
+    );
+    expect(
+      loadConfig(
+        validEnv({
+          AUTH_MODE: 'jwt',
+          JWT_ISSUER: 'issuer',
+          JWT_AUDIENCE: 'api',
+          JWT_JWKS_FILE: '/tmp/jwks.json',
+        }),
+      ).AUTH,
+    ).toEqual({ mode: 'jwt', issuer: 'issuer', audience: 'api', jwksFile: '/tmp/jwks.json' });
+  });
+
+  it('refuses unauthenticated local mode in production', () => {
+    expect(() => loadConfig(validEnv({ NODE_ENV: 'production' }))).toThrow(
+      /AUTH_MODE: must be jwt in production/,
+    );
   });
 
   it('applies defaults when optional variables are omitted', () => {
@@ -50,8 +76,9 @@ describe('loadConfig', () => {
     expect(config.ALLOW_EXTERNAL_CALLS).toBe(false);
     expect(config.USE_SYNTHETIC_FIXTURES).toBe(true);
     expect(config.EVAL_DEFAULT_DATASET).toBe('v1');
-    expect(config.OTEL_EXPORTER).toBe('console');
+    expect(config.OTEL_EXPORTER).toBe('none');
     expect(config.LOG_LEVEL).toBe('info');
+    expect(config.AUTH).toEqual({ mode: 'local' });
   });
 
   it('treats blank optional variables as missing', () => {
