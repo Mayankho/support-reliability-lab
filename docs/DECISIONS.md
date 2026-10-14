@@ -39,3 +39,13 @@ HTTP and environment parsing use Fastify 5 and Zod 4, matching the spec. Patch v
 `@srl/contracts` defines the agent input, agent output, and golden-case schemas. `toAgentVisibleInput` copies message, account, supplied policy docs, and a correlation id. It does not copy `expected`. The JSON Schema files remain in the top-level `contracts/` directory. The TypeScript package is `packages/contracts`.
 
 `guardProposedAction` checks structured action fields only. It rejects a completion flag and a protected proposal without explicit confirmation. It does not execute an action, and it does not grade customer-reply wording. Reply checks stay with the independent graders.
+
+## ADR-009: Dataset validation reads bytes, never rewrites them
+
+`pnpm eval:validate-data` (`@srl/dataset`) hashes the exact fixture bytes before parsing, so line endings and whitespace count. It reports every problem it finds rather than stopping at the first, with stable codes sorted by line. Issue text carries schema paths, counts, and policy IDs only; it never echoes a fixture line, so a malformed record containing something sensitive does not end up in CI logs.
+
+Beyond the manifest checks, two rules are stricter than the spec states. A required citation must be among the documents supplied to the agent, otherwise no agent could pass the case. A case may still have an empty document list, because that deliberately tests behavior when retrieval fails (KB-010). The validator also rejects lines containing email addresses, phone numbers, card-number-shaped digit runs, and common token formats. The fake `TEST_TOKEN_EXAMPLE` in SEC-006 is intentionally not token-shaped.
+
+Gold-label review is recorded beside the data in `fixtures/annotations/review.v1.json` and summarized in `docs/dataset/ANNOTATION_REVIEW.md`. The validator refuses a review file that describes different bytes, misses a case, or claims independent adjudication the manifest does not. Labels I disagree with are logged as disputes, not edited. A correction requires a new dataset version and manifest.
+
+CI now runs the validator, and the workflow pins `ubuntu-24.04` and the Node 24 major versions of the GitHub actions instead of the deprecated Node 20 ones.

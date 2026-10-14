@@ -14,7 +14,7 @@ I built it around the problems a support systems engineering role deals with eve
 | ---------------------------------------------------------------------------- | ------- |
 | Workspace, config validation, liveness endpoint, local Postgres, CI          | Done    |
 | Agent contracts and the `SYN-POLICY-1` registry                              | Done    |
-| Dataset integrity checks for the 80-case fixture                             | Next    |
+| Dataset integrity checks and gold-label review log for the 80-case fixture   | Done    |
 | Reference agent, independent graders, Postgres runner, release gate, API, UI | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -47,6 +47,7 @@ Requires Node.js 24 (`.nvmrc` pins 24.21.0), pnpm 10, and Docker.
 corepack enable
 pnpm install --frozen-lockfile
 pnpm lint && pnpm format:check && pnpm typecheck && pnpm test
+pnpm eval:validate-data                   # hash, schema, counts, policy references
 
 cp .env.example .env
 docker compose up -d db
@@ -64,7 +65,8 @@ The server binds to `127.0.0.1` only, and startup is rejected if `MODEL_ENABLED`
 apps/api/              Fastify service: config validation, health route
 packages/contracts/    Zod schemas for agent input/output and golden cases
 packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
-fixtures/              Synthetic policy, 80 golden cases, dataset manifest
+packages/dataset/      Fixture loader and eval:validate-data
+fixtures/              Synthetic policy, 80 golden cases, manifest, label review
 contracts/             JSON Schema and starter OpenAPI contract
 docs/                  Spec, roadmap, and design decisions
 ```
@@ -75,6 +77,7 @@ docs/                  Spec, roadmap, and design decisions
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): milestones and status
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): design decisions and their tradeoffs
 - [`packages/policies/README.md`](packages/policies/README.md): synthetic policy precedence
+- [`docs/dataset/ANNOTATION_REVIEW.md`](docs/dataset/ANNOTATION_REVIEW.md): gold-label review status and disputes
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): engineering standards for this repository
 
 ## Limitations

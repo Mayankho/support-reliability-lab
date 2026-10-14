@@ -10,9 +10,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "pnpm --filter @srl/contracts --filter @srl/policies --filter @srl/api typecheck",
-    "test": "pnpm --filter @srl/contracts --filter @srl/policies --filter @srl/api test",
-    "dev": "pnpm --filter @srl/api dev"
+    "typecheck": "pnpm -r --workspace-concurrency=1 typecheck",
+    "test": "pnpm -r --workspace-concurrency=1 test",
+    "dev": "pnpm --filter @srl/api dev",
+    "eval:validate-data": "node packages/dataset/src/cli/validate-data.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
