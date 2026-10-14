@@ -16,7 +16,10 @@
     "dev": "pnpm --filter @srl/api dev",
     "db:migrate": "node packages/db/src/cli/migrate.ts",
     "seed": "node packages/runner/src/cli/seed.ts",
-    "eval:validate-data": "node packages/dataset/src/cli/validate-data.ts"
+    "eval:validate-data": "node packages/dataset/src/cli/validate-data.ts",
+    "eval:run": "node packages/runner/src/cli/eval-run.ts",
+    "eval:gate": "node packages/runner/src/cli/eval-gate.ts",
+    "demo": "node packages/runner/src/cli/demo.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

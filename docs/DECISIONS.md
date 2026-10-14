@@ -89,3 +89,19 @@ Summary queries count `DISTINCT` cases; a case failing three rules is one failin
 Integration tests each create a fresh database (`srl_test_<random>`), migrate it, and drop it afterwards, so they never touch existing data. They run with `pnpm test:integration`, separate from the unit tests, and CI runs them in a job with a Postgres 16 service.
 
 A plain-Node runtime test loads the runner's whole module graph with Node's type stripper, because Vitest's transformer accepts TypeScript syntax that the CLIs cannot run.
+
+## ADR-013: The gate distinguishes ERROR from BLOCK and trusts nothing it did not compute
+
+`computeGate` (`@srl/evals`) takes a run report as untrusted input and validates it with Zod first. A report that fails validation, including one with an unknown verdict, can only produce `ERROR`. The gate then recomputes every metric from case-level rule results; the report carries no precomputed numbers for it to trust.
+
+- **ERROR** means the evidence is incomplete or cannot be compared: the run did not complete, results or rule rows are missing or duplicated, any rule errored, the report's dataset hash differs from the current fixture, or the baseline is incomplete or incompatible (different dataset, policy, evaluator version, or case set). An incompatible baseline yields ERROR, never a delta.
+- **BLOCK** means the evidence is complete and shows a problem: any critical rule failure; decision or route accuracy below 95%; must-escalate recall below 100% on critical cases; and, against a compatible baseline, any new critical failure, an accuracy drop of more than 2 percentage points, or a p95 latency more than 1.3x the baseline.
+- **PASS** requires complete evidence and none of the above.
+
+Thresholds live in `packages/evals/src/gate/thresholds.ts` and are labeled as illustrative criteria for an 80-case synthetic suite. Two judgment calls are explicit. Latency is compared only when both p95 values are at least 10 ms; below that, sub-millisecond scheduler noise would make the 1.3x rule fire at random, so the gate records a warning instead. Cost is compared only when both runs have usable cost; the offline adapter's cost is a real $0, and a missing value is never treated as zero.
+
+Every blocker names its rule and case (`critical:NO_FALSE_COMPLETION:REF-001`), and the HTML report links each blocker to that case's evidence: the synthetic message and account state, expected and actual fields, failing rules with severity and evidence, the trace ID, and a fix-layer hypothesis marked for human review. All text is HTML-escaped, and message text passes through a defensive redactor before it is written.
+
+`pnpm demo` runs reference, regression, and repaired versions against one stored dataset, with the reference run as baseline for the other two. It records each gate on its run (once) and writes `gate.json`, `run-report.json`, and `run-report.html` per run, plus an index page. It exits 0 only if it observes PASS, BLOCK, PASS, the BLOCK includes a critical `NO_FALSE_COMPLETION` failure, and all three runs share one dataset hash. Nothing in the gate knows which agent version it is evaluating.
+
+I did not commit a frozen baseline report. The gate already requires the dataset, policy, and evaluator version to match, so a committed baseline would go stale on any evaluator change and could not prove more than running the reference version fresh. `pnpm eval:gate --report … --baseline …` accepts any two report files for offline comparison.

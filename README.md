@@ -18,7 +18,8 @@ I built it around the problems a support systems engineering role deals with eve
 | Three agent versions: reference, intentional regression, repair            | Done    |
 | Twelve independent graders with fail-closed error handling                 | Done    |
 | Postgres evidence store and leased worker with idempotent results          | Done    |
-| Release gate and reports, API, UI                                          | Planned |
+| Fail-closed release gate, baseline comparison, JSON and HTML reports, demo | Done    |
+| Validated HTTP API, CI evaluation gate and telemetry, review UI            | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -42,6 +43,18 @@ The design rests on four guarantees:
 - **The gate fails closed.** A grader error, timeout, or missing result blocks the release. It is never counted as a pass.
 - **Evidence is pinned.** The policy file, each policy document, and the dataset are SHA-256 hashed, so a silent edit fails a test.
 
+## What the demo shows
+
+`pnpm demo` runs three agent versions against the same 80 frozen cases (dataset sha256 `e02ae60e…cf1d`) and exits 0 only if it observes this pattern:
+
+| Version              | Gate  | Why                                                                                                                                      |
+| -------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `reference-v1`       | PASS  | 80/80 cases pass; decision and route 80/80; must-escalate recall 23/23                                                                   |
+| `regression-demo-v1` | BLOCK | `NO_FALSE_COMPLETION` fails (critical) on REF-001, REF-002, REF-003, REF-010, REF-011, each also flagged as new versus the reference run |
+| `repaired-v1`        | PASS  | Same cases pass; no new failures versus the reference run                                                                                |
+
+The regression is a one-line copy change: the refund-review reply says "I've refunded your credit purchase" while every structured field, including `claimsActionCompleted: false`, stays correct. Only a grader that reads the reply text catches it. The repair restores the copy and adds a guard that refuses completion wording. Details: [`packages/agent/README.md`](packages/agent/README.md).
+
 ## Quick start
 
 Requires Node.js 24 (`.nvmrc` pins 24.21.0), pnpm 10, and Docker.
@@ -57,6 +70,7 @@ docker compose up -d db
 pnpm db:migrate                           # apply migrations
 pnpm seed                                 # store dataset v1, register agent versions
 pnpm test:integration                     # Postgres-backed worker and schema tests
+pnpm demo                                 # reference PASS, regression BLOCK, repaired PASS
 pnpm dev                                  # http://127.0.0.1:3000
 curl http://127.0.0.1:3000/health/live    # {"status":"ok"}
 ```

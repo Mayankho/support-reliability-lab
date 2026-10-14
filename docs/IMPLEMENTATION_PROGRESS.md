@@ -4,10 +4,16 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 05, persistence and worker.
-- **Next action:** milestone 06. Pure gate and comparison logic over run reports, `gate.json`, `run-report.json`, `run-report.html`, `pnpm eval:run`, `pnpm eval:gate`, and `pnpm demo` asserting PASS, BLOCK, PASS on the same fixture.
+- **Last completed milestone:** 06, comparisons, gate, and reports.
+- **Next action:** milestone 07. Fastify routes for readiness, datasets, run enqueue/list/detail, case results, comparison, gate, and metrics summary, with Zod validation, stable error bodies, pagination, and inject tests for every route and error class.
 
 ## Log
+
+### Milestone 06: comparisons, gate, and reports
+
+- Added report building, metrics, comparison, the fail-closed gate, and HTML rendering to `@srl/evals`; report building from Postgres, `pnpm eval:run`, `pnpm eval:gate`, and `pnpm demo` to `@srl/runner`.
+- Observed locally: `pnpm demo` exited 0 with reference-v1 PASS (80/80), regression-demo-v1 BLOCK (`critical:NO_FALSE_COMPLETION` on REF-001, -002, -003, -010, -011 plus matching `regression:new_critical` blockers), repaired-v1 PASS, all on dataset sha256 `e02ae60e…cf1d`. `eval:run` exits 0 on PASS and 1 on BLOCK; `eval:gate` returned ERROR (exit 1) for a report with one rule result removed.
+- 17 gate unit tests (missing results or rules, errored rules, invalid or tampered reports, dataset mismatch, thresholds, must-escalate recall, incompatible and incomplete baselines, new regressions, fixed cases, latency above and below the noise floor) and 5 demo integration tests (pattern, blockers, artifact validity, single gate record, HTML escaping).
 
 ### Milestone 05: persistence and worker
 

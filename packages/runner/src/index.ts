@@ -9,6 +9,9 @@ export {
   type PreparedCase,
   type RunConfig,
 } from './execute.ts';
+export { runDemo, type DemoResult, type DemoStep } from './demo.ts';
+export { buildReportFromDb, evaluateAndGate, readReportFile, type GateOutcome } from './report.ts';
+export { formatRunSummary } from './summary.ts';
 export {
   RunRequestError,
   currentSourceCommit,

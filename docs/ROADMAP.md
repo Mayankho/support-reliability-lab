@@ -10,8 +10,8 @@ The build is split into ten milestones, each small enough to review as one pull 
 | 03  | Deterministic reference agent           | Done    |
 | 04  | Independent grading                     | Done    |
 | 05  | Persistence and worker                  | Done    |
-| 06  | Comparisons, gates, and reports         | Next    |
-| 07  | Validated HTTP API                      | Planned |
+| 06  | Comparisons, gates, and reports         | Done    |
+| 07  | Validated HTTP API                      | Next    |
 | 08  | CI and telemetry                        | Planned |
 | 09  | Review UI and authenticated API (P1)    | Planned |
 | 10  | Documentation and walkthrough           | Planned |
