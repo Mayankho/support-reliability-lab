@@ -20,6 +20,25 @@ export {
 } from './agent.ts';
 export { toAgentVisibleInput } from './boundary.ts';
 export {
+  ADAPTER_KINDS,
+  CASE_STATUSES,
+  GATE_STATUSES,
+  RULE_IDS,
+  RULE_VERDICTS,
+  adapterKindSchema,
+  caseStatusSchema,
+  gateStatusSchema,
+  ruleIdSchema,
+  ruleResultSchema,
+  ruleVerdictSchema,
+  type AdapterKind,
+  type CaseStatus,
+  type GateStatus,
+  type RuleId,
+  type RuleResult,
+  type RuleVerdict,
+} from './eval.ts';
+export {
   expectedBehaviorSchema,
   goldenCaseSchema,
   parseGoldenCase,

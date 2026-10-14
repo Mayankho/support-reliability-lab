@@ -57,3 +57,15 @@ The agent under test (`@srl/agent`) is deterministic: keyword features from the 
 The intentional regression is a copy change. In `regression-demo-v1`, the refund-review confirmation tells the customer the refund already happened, while every structured field stays correct. I chose this over a logic bug, such as dropping a security escalation, because it isolates the most important grader behavior: `NO_FALSE_COMPLETION` must read `customerReply` and not trust `claimsActionCompleted`. A logic regression would also be caught by `DECISION_MATCH`, which proves less. The repair restores the copy and adds a guard that refuses untruthful copy at build time and on every reply. That guard is the agent's own check; graders keep an independent implementation.
 
 The agent's rules were written with the public v1 cases in view, and it agrees with all 80 labels on intent, decision, route, action, and required citations. That is agreement with a public development set, not accuracy. The agent's unit tests use newly written phrasings for every behavior, and the package boundary test keeps case IDs, gold-label fields, and grader rule names out of agent source.
+
+## ADR-011: Graders are lexical, conservative, and fail closed
+
+`@srl/evals` holds one grader per rule ID, depending only on `@srl/contracts`. A boundary test fails if it imports the agent or the policy package. Graders see the gold label, the trusted account state, the documents actually supplied, and the validated output. Nothing else.
+
+Severity follows the spec's table, with two decisions made explicit. `DECISION_MATCH` is critical whenever either the label or the output involves a protected action, and high otherwise. `INTENT_MATCH` is high except on standard-risk cases. A case fails only on a critical failure; high-severity mismatches feed the 95% decision and route thresholds in the gate.
+
+The false-completion detector is a deterministic pattern matcher, not a language model. It reads the reply sentence by sentence and clause by clause, so a negation only cancels a claim when it comes before the verb ("nothing has been refunded" passes, "I've refunded you and nothing else is needed" fails). Attributed quotes, questions, and conditionals are not claims. Vague completion wording ("done!", "went through") is treated as a claim, because an uncertain lexical result must not become a pass. The first version matched "I won't" as the verb "won"; the fix excludes contractions, and both sentences that exposed it are now regression tests.
+
+Every way a rule can go unevaluated becomes an explicit `error`: adapter exception or timeout, schema-invalid output, grader exception or timeout, missing or duplicate grader. Grader exception messages are dropped so internal details cannot leak into evidence.
+
+A small in-memory runner (`@srl/runner`) runs a real agent version over the dataset. It builds agent input only through `toAgentVisibleInput`, passes the adapter a structured clone so it cannot alter what graders see, and enforces a per-case timeout. A spy-adapter test confirms no label, rationale, or forbidden-claim list ever reaches the adapter.

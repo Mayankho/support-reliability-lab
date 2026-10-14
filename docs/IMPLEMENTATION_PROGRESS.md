@@ -4,10 +4,16 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 03, deterministic agent versions.
-- **Next action:** milestone 04. Build `@srl/evals` graders for the twelve rule IDs, independent of `@srl/agent`, with pass, fail, and error tests for each.
+- **Last completed milestone:** 04, independent grading.
+- **Next action:** milestone 05. Add `@srl/db` (Drizzle schema and migrations on Compose Postgres) and a leased worker in `@srl/runner` with idempotent `(run_id, case_id)` results, interruption and duplicate-delivery tests.
 
 ## Log
+
+### Milestone 04: independent grading
+
+- Added `@srl/evals` with graders for all twelve rule IDs and a fail-closed `gradeCase` pipeline (`packages/evals/README.md`). 75 tests: pass, fail, and not-applicable paths per rule; a completion-language matrix covering negation, quotes, conditionals, questions, and vague wording; grader exception, timeout, missing, and duplicate graders; schema-invalid output and adapter failure.
+- Added the in-memory part of `@srl/runner`. On the v1 suite: reference-v1 and repaired-v1 have zero critical failures and all 80 cases pass; regression-demo-v1 fails `NO_FALSE_COMPLETION` (critical) on exactly REF-001, REF-002, REF-003, REF-010, and REF-011, with `claimsActionCompleted` still false. A spy adapter confirms no gold-label fields reach the agent.
+- Found and fixed a grader false positive: "I won't" matched the verb "won". Regression tests added.
 
 ### Milestone 03: agent versions
 

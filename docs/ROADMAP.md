@@ -8,8 +8,8 @@ The build is split into ten milestones, each small enough to review as one pull 
 | 01  | Domain and policy contracts             | Done    |
 | 02  | Dataset integrity and 80-case fixtures  | Done    |
 | 03  | Deterministic reference agent           | Done    |
-| 04  | Independent grading                     | Next    |
-| 05  | Persistence and worker                  | Planned |
+| 04  | Independent grading                     | Done    |
+| 05  | Persistence and worker                  | Next    |
 | 06  | Comparisons, gates, and reports         | Planned |
 | 07  | Validated HTTP API                      | Planned |
 | 08  | CI and telemetry                        | Planned |
