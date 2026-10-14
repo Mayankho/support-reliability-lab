@@ -17,7 +17,8 @@ I built it around the problems a support systems engineering role deals with eve
 | Dataset integrity checks and gold-label review log for the 80-case fixture | Done    |
 | Three agent versions: reference, intentional regression, repair            | Done    |
 | Twelve independent graders with fail-closed error handling                 | Done    |
-| Postgres runner, release gate and reports, API, UI                         | Planned |
+| Postgres evidence store and leased worker with idempotent results          | Done    |
+| Release gate and reports, API, UI                                          | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -53,6 +54,9 @@ pnpm eval:validate-data                   # hash, schema, counts, policy referen
 
 cp .env.example .env
 docker compose up -d db
+pnpm db:migrate                           # apply migrations
+pnpm seed                                 # store dataset v1, register agent versions
+pnpm test:integration                     # Postgres-backed worker and schema tests
 pnpm dev                                  # http://127.0.0.1:3000
 curl http://127.0.0.1:3000/health/live    # {"status":"ok"}
 ```
@@ -70,7 +74,8 @@ packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
 packages/dataset/      Fixture loader and eval:validate-data
 packages/agent/        reference-v1, regression-demo-v1, repaired-v1
 packages/evals/        Graders for the twelve rule IDs (cannot import the agent)
-packages/runner/       Runs an agent version over the dataset and grades each case
+packages/runner/       Enqueues runs; leased worker executes, grades, and persists each case
+packages/db/           Drizzle schema, migrations, immutability triggers, SQL queries
 fixtures/              Synthetic policy, 80 golden cases, manifest, label review
 contracts/             JSON Schema and starter OpenAPI contract
 docs/                  Spec, roadmap, and design decisions

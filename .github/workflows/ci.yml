@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   check:
-    name: lint, typecheck, test
+    name: lint, typecheck, unit tests
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -39,8 +39,55 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test
+      - name: Unit tests
         run: pnpm test
 
       - name: Validate dataset integrity
         run: pnpm eval:validate-data
+
+  integration:
+    name: Postgres integration tests
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: support_reliability
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d support_reliability"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://app:app@localhost:5432/support_reliability
+      TEST_DATABASE_URL: postgresql://app:app@localhost:5432/support_reliability
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Seed synthetic data
+        run: pnpm seed
+
+      - name: Integration tests
+        run: pnpm test:integration

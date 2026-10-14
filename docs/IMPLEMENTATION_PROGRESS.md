@@ -4,10 +4,18 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 04, independent grading.
-- **Next action:** milestone 05. Add `@srl/db` (Drizzle schema and migrations on Compose Postgres) and a leased worker in `@srl/runner` with idempotent `(run_id, case_id)` results, interruption and duplicate-delivery tests.
+- **Last completed milestone:** 05, persistence and worker.
+- **Next action:** milestone 06. Pure gate and comparison logic over run reports, `gate.json`, `run-report.json`, `run-report.html`, `pnpm eval:run`, `pnpm eval:gate`, and `pnpm demo` asserting PASS, BLOCK, PASS on the same fixture.
 
 ## Log
+
+### Milestone 05: persistence and worker
+
+- Added `@srl/db`: Drizzle schema for the spec's nine tables, a generated table migration, and a hand-written migration with the `case_inputs` label-free view, append-only and immutability triggers, a run lifecycle guard, and a self-referencing baseline foreign key.
+- Added the leased worker and run service to `@srl/runner`, plus `pnpm db:migrate` and `pnpm seed` (both idempotent; verified twice against a clean database).
+- 8 schema and 11 worker integration tests on Postgres 16: migrations, idempotent import and same-version conflict, label-free view, immutable rows, lifecycle and single-gate rules, full run (80 results, 960 rule results), mid-batch interruption and resume, stale-lease recovery, duplicate delivery, attempt budget, code-changed and dataset-changed refusals, distinct-case denominators, no writes after completion, and no message text or connection details in audit, trace, or config records.
+- Running the seed under plain Node exposed a TypeScript parameter property, which Node's type stripper rejects. Fixed, and added a test that loads the runner's module graph under plain Node.
+- CI gained an integration job with a Postgres 16 service that migrates, seeds, and runs the integration suites.
 
 ### Milestone 04: independent grading
 

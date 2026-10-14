@@ -8,14 +8,17 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "@srl/agent": "workspace:*",
     "@srl/contracts": "workspace:*",
     "@srl/dataset": "workspace:*",
+    "@srl/db": "workspace:*",
     "@srl/evals": "workspace:*",
-    "@srl/policies": "workspace:*"
+    "@srl/policies": "workspace:*",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

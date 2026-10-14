@@ -6,3 +6,4 @@ artifacts
 docs/TECHNICAL_SPEC.md
 contracts
 fixtures
+packages/db/migrations

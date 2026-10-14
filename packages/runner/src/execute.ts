@@ -123,22 +123,32 @@ export async function executeCase(
   };
 }
 
-/** Runs items with at most `limit` in flight, preserving input order in the result. */
+/**
+ * Runs items with at most `limit` in flight, preserving input order in the result. After the first
+ * failure no new items start; the first error is rethrown once in-flight items settle.
+ */
 export async function mapWithConcurrency<T, R>(
   items: readonly T[],
   limit: number,
   worker: (item: T, index: number) => Promise<R>,
 ): Promise<R[]> {
   const results = new Array<R>(items.length);
-  let next = 0;
+  const state: { next: number; failure: { error: unknown } | null } = { next: 0, failure: null };
   const lanes = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
-    while (next < items.length) {
-      const index = next;
-      next += 1;
-      results[index] = await worker(items[index] as T, index);
+    while (state.failure === null && state.next < items.length) {
+      const index = state.next;
+      state.next += 1;
+      try {
+        results[index] = await worker(items[index] as T, index);
+      } catch (error) {
+        state.failure ??= { error };
+      }
     }
   });
   await Promise.all(lanes);
+  if (state.failure !== null) {
+    throw state.failure.error;
+  }
   return results;
 }
 

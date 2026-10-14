@@ -68,4 +68,24 @@ The false-completion detector is a deterministic pattern matcher, not a language
 
 Every way a rule can go unevaluated becomes an explicit `error`: adapter exception or timeout, schema-invalid output, grader exception or timeout, missing or duplicate grader. Grader exception messages are dropped so internal details cannot leak into evidence.
 
-A small in-memory runner (`@srl/runner`) runs a real agent version over the dataset. It builds agent input only through `toAgentVisibleInput`, passes the adapter a structured clone so it cannot alter what graders see, and enforces a per-case timeout. A spy-adapter test confirms no label, rationale, or forbidden-claim list ever reaches the adapter.
+A small in-memory runner (`@srl/runner`) runs a real agent version over the dataset (persistence arrives in ADR-012). It builds agent input only through `toAgentVisibleInput`, passes the adapter a structured clone so it cannot alter what graders see, and enforces a per-case timeout. A spy-adapter test confirms no label, rationale, or forbidden-claim list ever reaches the adapter.
+
+## ADR-012: Postgres holds the evidence, and the database enforces immutability
+
+Persistence uses Drizzle ORM 0.45.4 with node-postgres 8.23.1 against Postgres 16, as the spec proposed. `drizzle-kit` generates the table migration from `packages/db/src/schema.ts`. A second, hand-written migration adds what the ORM cannot express:
+
+- `case_inputs`, a view over `cases` without the gold-label column. The worker builds agent input from this view and loads labels with a separate query for grading.
+- Triggers that reject `UPDATE` and `DELETE` on datasets, cases, agent versions, case results, rule results, trace events, and audit events.
+- A run guard enforcing `queued → running → completed | errored | cancelled`. Once a run finishes it is frozen, except that its gate may be recorded exactly once. Results cannot be inserted unless the run is `running`.
+
+Immutability is checked in the database, not only in application code, so a bug or an ad-hoc query cannot rewrite evidence.
+
+`agent_versions` is unique on `(version, source_hash)`, not on the version label. If the code behind `reference-v1` changes, it gets a new row, and every run points at the exact source hash it executed. The worker refuses to start a run if the resolved agent's source hash differs from the one recorded at enqueue time (`agent_source_changed`), or if the stored dataset hash differs from the run's manifest hash.
+
+The worker leases jobs with `FOR UPDATE SKIP LOCKED`. A job is claimable when queued, or when its lease has expired, which is how a crashed worker's job is recovered. The worker renews its lease after every case and stops as soon as renewal fails. Results are inserted with `ON CONFLICT (run_id, case_id) DO NOTHING` inside one transaction per case, together with that case's rule results and trace spans, so a retry or a duplicate delivery can never double-count. A job that exceeds its attempt budget (3) is failed and its run marked `errored`. `completed` means every case has a result. The gate is a separate field and stays empty until milestone 06 computes it.
+
+Summary queries count `DISTINCT` cases; a case failing three rules is one failing case. A test sabotages a single case so it fails several critical rules and checks that the denominator counts it once.
+
+Integration tests each create a fresh database (`srl_test_<random>`), migrate it, and drop it afterwards, so they never touch existing data. They run with `pnpm test:integration`, separate from the unit tests, and CI runs them in a job with a Postgres 16 service.
+
+A plain-Node runtime test loads the runner's whole module graph with Node's type stripper, because Vitest's transformer accepts TypeScript syntax that the CLIs cannot run.

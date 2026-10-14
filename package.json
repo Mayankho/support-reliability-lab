@@ -12,7 +12,10 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck",
     "test": "pnpm -r --workspace-concurrency=1 test",
+    "test:integration": "pnpm -r --workspace-concurrency=1 --if-present test:integration",
     "dev": "pnpm --filter @srl/api dev",
+    "db:migrate": "node packages/db/src/cli/migrate.ts",
+    "seed": "node packages/runner/src/cli/seed.ts",
     "eval:validate-data": "node packages/dataset/src/cli/validate-data.ts"
   },
   "devDependencies": {
