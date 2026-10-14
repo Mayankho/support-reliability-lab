@@ -17,6 +17,8 @@ All data is synthetic. Results describe behavior on 80 invented cases and are no
 [41e790b]: https://github.com/Mayankho/support-reliability-lab/commit/41e790b
 [b74e76b]: https://github.com/Mayankho/support-reliability-lab/commit/b74e76b
 [5b89a68]: https://github.com/Mayankho/support-reliability-lab/commit/5b89a68
+[84c6325]: https://github.com/Mayankho/support-reliability-lab/commit/84c6325
+[edad02e]: https://github.com/Mayankho/support-reliability-lab/commit/edad02e
 
 ## Agent behavior: routing, escalation, and billing guardrails
 
@@ -99,6 +101,21 @@ The reference agent is deterministic and rule-based on purpose. The point is the
 | Four views: run overview, comparison, case detail, release decision       | `apps/web/src/views/*.tsx`                        | `apps/web/e2e/review.spec.ts`                                                | [b74e76b][] |
 | A reviewer can go from a blocked run to the failing case and its evidence | same                                              | Playwright: "drills from a blocked run to the failing case and its evidence" | [b74e76b][] |
 | The UI shows recorded gates and never computes one                        | `apps/web/src/api.ts` (Zod-parsed responses only) | code review; ADR-018                                                         | [b74e76b][] |
+
+## Ticket triage (additive, outside the gate)
+
+| Claim                                                                                                         | Implementation                                        | Proof                                                                                        | Commit      |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------- |
+| The taxonomy is byte-pinned, and its counts and references are recomputed, not trusted                        | `packages/ticket-analysis/src/taxonomy/validate.ts`   | `taxonomy.test.ts`; `pnpm tickets:validate-taxonomy` in CI                                   | [84c6325][] |
+| Each golden case maps to candidate issue types and the boundary it tests, as a draft that cannot claim review | `data/crosswalk.v1.json`, `src/crosswalk/validate.ts` | `crosswalk.test.ts` ("rejects a reviewed record in a single-author draft"); doc kept in sync | [84c6325][] |
+| The module never feeds the gate, and stays offline                                                            | package boundaries                                    | `packages/ticket-analysis/src/boundary.test.ts` (both directions)                            | [84c6325][] |
+| Names and emails are dropped at parse time; bad records are rejected without echoing values                   | `src/thread/parse.ts`                                 | `thread.test.ts`                                                                             | [edad02e][] |
+| The same facts give opposite primary issues depending on the requested remedy                                 | `src/classify/triage.ts`                              | `triage.test.ts` ("makes PRC-01 primary for the same facts…")                                | [edad02e][] |
+| Flags are independent of the issue type; `F-OUT` never comes from one report                                  | `src/classify/flags.ts`, `incident.ts`                | `triage.test.ts` ("sets F-SEC even when the primary issue is benign"), `incident.test.ts`    | [edad02e][] |
+| A root cause is confirmed only by trusted synthetic state, and contradictions are recorded                    | `src/classify/state.ts`                               | `triage.test.ts` ("never confirms a cause from what the customer says")                      | [edad02e][] |
+| Unsupported content and languages abstain instead of guessing                                                 | `src/classify/triage.ts`                              | `triage.test.ts` ("abstention and languages")                                                | [edad02e][] |
+| The demo fails if any secret, name, email, or message text reaches its output                                 | `src/demo.ts`                                         | `demo.test.ts`; `pnpm tickets:demo` in CI before the scan                                    | T05         |
+| The private import cannot run by accident or write inside the repository                                      | `src/private/local-import.ts`                         | `local-import.test.ts` (permission flag, symlink escape, suppression, file modes, no wiring) | T05         |
 
 ## Observed results
 

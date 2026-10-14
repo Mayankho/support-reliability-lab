@@ -86,13 +86,13 @@ README with architecture, setup commands, an example trace, screenshots, a five-
 
 A separate package, `packages/ticket-analysis`, for triaging synthetic support conversations against a versioned issue taxonomy and for mapping what the 80 golden cases cover. It is not part of the release gate. No core package imports it, and the v1 dataset, labels, contracts, and gate are unchanged. Design notes are in ADR-019 onward.
 
-| #   | Step                                               | Status  |
-| --- | -------------------------------------------------- | ------- |
-| T01 | Taxonomy registry and coverage crosswalk           | Done    |
-| T02 | Thread parsing on synthetic conversations          | Done    |
-| T03 | Conservative classification and independent flags  | Done    |
-| T04 | Gap-driven synthetic case pack (only if warranted) | Planned |
-| T05 | Demonstration and an optional local-only import    | Next    |
+| #   | Step                                               | Status   |
+| --- | -------------------------------------------------- | -------- |
+| T01 | Taxonomy registry and coverage crosswalk           | Done     |
+| T02 | Thread parsing on synthetic conversations          | Done     |
+| T03 | Conservative classification and independent flags  | Done     |
+| T04 | Gap-driven synthetic case pack (only if warranted) | Deferred |
+| T05 | Demonstration and an optional local-only import    | Done     |
 
 **T01:** a byte-pinned registry (15 domains, 67 issue types, 80 diagnostic options, 9 risk flags) with recomputed counts and referential checks, and a draft crosswalk from each golden case to candidate issue types, flags, and the safety boundary it exercises. _Closed by:_ registry and crosswalk validation tests, and a generated crosswalk document that a test keeps in sync.
 
@@ -100,7 +100,7 @@ A separate package, `packages/ticket-analysis`, for triaging synthetic support c
 
 **T03:** classify the customer's central current need with one optional secondary issue, detect risk flags independently, confirm a diagnostic option only from trusted synthetic state, and abstain when the rules do not apply. _Closed by:_ tests for opposite primary issues on the same facts, body-versus-subject conflicts, flags under a benign primary, ambiguous refunds, unsupported languages, and prompt injection.
 
-**T04:** author new cases only for gaps the crosswalk shows, in a separately versioned dataset with independently reviewed labels. _Closed by:_ a reviewed pack that runs separately from the v1 gate, or a documented decision not to author one yet.
+**T04:** author new cases only for gaps the crosswalk shows, in a separately versioned dataset with independently reviewed labels. _Closed by:_ a reviewed pack that runs separately from the v1 gate, or a documented decision not to author one yet. **Deferred** (ADR-022): eight cases are proposed in the crosswalk, but their expected behavior needs a reviewer other than the author before they can be written.
 
 **T05:** `pnpm tickets:demo` on invented conversations, showing grouping, classification, flags, unconfirmed root causes, redaction, and the difference between what a customer reports and what synthetic state confirms. _Closed by:_ the demo in CI with a self-check that no secret appears in its output.
 

@@ -26,7 +26,8 @@
     "auth:token": "node apps/api/src/cli/auth-dev.ts token",
     "scan:sensitive": "node packages/dataset/src/cli/scan-sensitive.ts",
     "tickets:validate-taxonomy": "node packages/ticket-analysis/src/cli/validate-taxonomy.ts",
-    "tickets:coverage": "node packages/ticket-analysis/src/cli/coverage.ts"
+    "tickets:coverage": "node packages/ticket-analysis/src/cli/coverage.ts",
+    "tickets:demo": "node packages/ticket-analysis/src/cli/demo.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -232,3 +232,28 @@ The gap list is chosen by boundary, not frequency. Of the ten gaps, two are bett
 Review is required for abstentions, tie-breaks, subject conflicts, contradictions, authority claims, human-only issues, multiple protected requests, data-quality anomalies, and the `F-SEC`, `F-LEG`, and `F-CHB` flags.
 
 `scoreAgreement` reports exact-primary agreement, acceptable-alternate agreement, secondary agreement, abstention, and per-flag precision and recall separately, each with its denominator and the label set's status. Against labels written by the rules' author, these numbers measure consistency with that author, not accuracy.
+
+## ADR-022: The ticket demo is synthetic and self-checking; the private import is opt-in and outside the repo; no new cases yet
+
+`pnpm tickets:demo` runs the whole path on 41 invented records in `packages/ticket-analysis/fixtures/`:
+
+- parsing, including one deliberately malformed record, out-of-order records, and a duplicated record;
+- grouping, triage, independent flags, and trusted synthetic state for five threads;
+- an outage cluster that produces `F-OUT`, and a lone outage report that does not;
+- agreement with an author-labeled development set.
+
+It writes `artifacts/tickets/triage.json`, which holds codes only. Before exiting it checks that no secret value, name, email address, or message text from the input appears in its printed output or the artifact, and it exits 1 if one does. CI runs it before the sensitive-data scan, which then scans the artifact too. The demo labels are the rules author's own. The output says that agreement with them shows consistency, not accuracy, and it does not gate anything.
+
+`src/cli/local-import.ts` is an optional aggregation of a real-format export, for local use by its owner. It is deliberately hard to run by accident:
+
+- No package script, CI job, or demo references it, and a test checks that.
+- It refuses to run without `--i-have-permission-to-process-this-file`.
+- Input and output must be absolute paths outside the repository. Symlinks are resolved first, so a link cannot point back inside.
+- It refuses a non-empty output directory, makes no network calls (the package boundary test forbids network modules), and holds raw text only in memory.
+- The output is a single `summary.json` with mode `0600` in a `0700` directory. It contains aggregate counts by domain, issue type, flag, anomaly, and rejection code, with every count under ten suppressed, and no IDs or text.
+
+Its tests use invented records in a temporary directory. It has not been run on any real data.
+
+`.gitignore` and the sensitive-data scanner reduce the chance of committing private data, but they are not guarantees. The real protection is that nothing private is ever placed inside the repository.
+
+**No new evaluation cases (T04).** The crosswalk proposes eight new cases for gaps the v1 suite does not exercise: an API 401 with a pasted key, rate limits, webhook retries, credits that never arrived, a pending hold versus a duplicate, a stuck job that is the central need, a deletion with a legal deadline, and a non-English ambiguous refund. None is authored yet. A new case needs expected behavior that someone other than its author has reviewed, in a separately versioned dataset that runs outside the v1 gate. Writing cases and labels alone would create the self-graded gold set the project avoids elsewhere. The proposals are in `docs/TAXONOMY_COVERAGE_CROSSWALK.md`, ready for that review.

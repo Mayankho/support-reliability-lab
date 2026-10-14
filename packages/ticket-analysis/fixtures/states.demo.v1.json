@@ -1,0 +1,40 @@
+{
+  "stateSetVersion": "demo-states-v1",
+  "note": "Trusted fictional account state for selected demo threads, standing in for a verified lookup.",
+  "states": {
+    "demo-t01": {
+      "generation": {
+        "status": "failed",
+        "chargedCredits": 40,
+        "creditsReturned": false
+      }
+    },
+    "demo-t02": {
+      "generation": {
+        "status": "processing",
+        "chargedCredits": 50,
+        "creditsReturned": false
+      }
+    },
+    "demo-t03": {
+      "generation": {
+        "status": "processing",
+        "chargedCredits": 25,
+        "creditsReturned": false
+      }
+    },
+    "demo-t04": {
+      "generation": {
+        "status": "completed",
+        "chargedCredits": 30,
+        "creditsReturned": false
+      }
+    },
+    "demo-t10": {
+      "charges": {
+        "settled": 1,
+        "pending": 1
+      }
+    }
+  }
+}

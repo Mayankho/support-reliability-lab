@@ -1,0 +1,284 @@
+{
+  "labelSetVersion": "demo-labels-v1",
+  "labelStatus": "author_labeled_development_set",
+  "note": "Expected triage for the invented demo threads, written by the author of the rules from the taxonomy definitions. Not independently reviewed. Agreement with these labels shows consistency with the author, not accuracy.",
+  "labels": [
+    {
+      "threadId": "demo-t01",
+      "primaryL2": "CRD-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": "PRC-01",
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t02",
+      "primaryL2": "PRC-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": "CRD-01",
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t03",
+      "primaryL2": "CRD-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": "PRC-01",
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t04",
+      "primaryL2": "CRD-05",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t05",
+      "primaryL2": "BIL-01",
+      "acceptablePrimaryL2": [
+        "BIL-03"
+      ],
+      "secondaryL2": "BIL-03",
+      "flags": [
+        "F-CHURN",
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t06",
+      "primaryL2": "API-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-SEC"
+      ]
+    },
+    {
+      "threadId": "demo-t07",
+      "primaryL2": "API-03",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-ENT"
+      ]
+    },
+    {
+      "threadId": "demo-t08",
+      "primaryL2": "API-04",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t09",
+      "primaryL2": "PRV-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t10",
+      "primaryL2": "BIL-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t11",
+      "primaryL2": "BIL-06",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": "PRC-01",
+      "flags": []
+    },
+    {
+      "threadId": "demo-t12",
+      "primaryL2": "PLN-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-CHURN"
+      ]
+    },
+    {
+      "threadId": "demo-t13",
+      "primaryL2": "BIL-03",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-CHURN"
+      ]
+    },
+    {
+      "threadId": "demo-t14",
+      "primaryL2": "PRC-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t15",
+      "primaryL2": "UNK-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t16",
+      "primaryL2": null,
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t17",
+      "primaryL2": "FBK-03",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t18",
+      "primaryL2": "ACC-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t19",
+      "primaryL2": "API-04",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t20",
+      "primaryL2": "BIL-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-CHB",
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t21",
+      "primaryL2": "PRV-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-LEG"
+      ]
+    },
+    {
+      "threadId": "demo-t22",
+      "primaryL2": "BIL-06",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-REG"
+      ]
+    },
+    {
+      "threadId": "demo-t23",
+      "primaryL2": "BIL-01",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t24",
+      "primaryL2": "PRV-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t25",
+      "primaryL2": null,
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t26",
+      "primaryL2": null,
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    },
+    {
+      "threadId": "demo-t27",
+      "primaryL2": "CRD-01",
+      "acceptablePrimaryL2": [
+        "PRC-01"
+      ],
+      "secondaryL2": "PRC-01",
+      "flags": [
+        "F-MON"
+      ]
+    },
+    {
+      "threadId": "demo-t28",
+      "primaryL2": "NET-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "threadId": "demo-t29",
+      "primaryL2": "NET-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "threadId": "demo-t30",
+      "primaryL2": "NET-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "threadId": "demo-t31",
+      "primaryL2": "NET-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "threadId": "demo-t32",
+      "primaryL2": "NET-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": [
+        "F-OUT"
+      ]
+    },
+    {
+      "threadId": "demo-t33",
+      "primaryL2": "NET-02",
+      "acceptablePrimaryL2": [],
+      "secondaryL2": null,
+      "flags": []
+    }
+  ]
+}

@@ -112,6 +112,11 @@ function secretSpans(text: string): Span[] {
   return merged;
 }
 
+/** The secret-like values themselves. Only for leak self-checks; never print or store the result. */
+export function secretValues(text: string): string[] {
+  return secretSpans(text).map((span) => text.slice(span.start, span.end));
+}
+
 /** Kinds of secret-like values present. The values themselves are never returned. */
 export function detectSecrets(text: string): SecretKind[] {
   return [...new Set(secretSpans(text).map((span) => span.kind))].sort();

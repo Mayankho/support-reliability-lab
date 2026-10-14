@@ -4,10 +4,18 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** T03, conservative classification and independent flags. The ten core milestones are done.
-- **Next action:** T05, `pnpm tickets:demo` on invented conversations with an author-labeled development set, a self-check that no secret reaches the output, and an optional local-only import that refuses paths inside the repository.
+- **Last completed milestone:** T05, the ticket triage demo and the optional local-only import. The ten core milestones and the additive workstream are done, except T04, which is deferred until someone other than the author can review new expected outcomes.
+- **Next action:** human review of the branch, then pushing it and confirming CI on GitHub. After that, the highest-value additions are independent review of the 80 starter labels and the 8 proposed cases, and a second reviewer for the crosswalk.
 
 ## Log
+
+### T05: demonstration and local-only import
+
+- Added `pnpm tickets:demo` on 41 invented records (33 threads, 5 with trusted synthetic state, 1 malformed record, out-of-order and duplicated records, an outage cluster). It prints the triage table, report-versus-state comparisons, hypotheses for fix home and automation cap, incident candidates, a redacted preview, and agreement with an author-labeled set (30/30 exact primary, 6/6 secondary, 3/3 abstentions, all flags 100% precision and recall). Those numbers are stated as consistency with the author, because the threads and labels were written alongside the rules. It self-checks for leaks and writes `artifacts/tickets/triage.json`.
+- Added an optional local-only import with no script, CI, or demo wiring. It requires an explicit permission flag and absolute paths outside the repository (symlinks resolved), refuses a non-empty output, and writes one `0600` aggregate file with counts under ten suppressed and no IDs or text. Tests use invented records in a temporary directory. It has not been run on any real data.
+- CI now validates the taxonomy, checks the crosswalk is current, and runs the demo before the sensitive-data scan.
+- Recorded T04 as deferred in ADR-022, with eight proposed cases in the crosswalk.
+- Tests: 16 more (demo behavior and leak check; local-import refusals, symlink escape, suppression, file modes, and no wiring).
 
 ### T02 and T03: thread parsing and classification
 

@@ -45,6 +45,11 @@ jobs:
       - name: Validate dataset integrity
         run: pnpm eval:validate-data
 
+      - name: Validate issue taxonomy and check the coverage crosswalk is current
+        run: |
+          pnpm tickets:validate-taxonomy
+          pnpm tickets:coverage -- --check
+
   integration:
     name: Postgres integration tests
     runs-on: ubuntu-24.04
@@ -100,6 +105,9 @@ jobs:
 
       - name: Alert check (fails while any alert is open)
         run: pnpm alerts:check
+
+      - name: Ticket triage demo on invented conversations (fails on any leak)
+        run: pnpm tickets:demo
 
       - name: Scan tracked files and generated artifacts for sensitive values
         run: pnpm scan:sensitive

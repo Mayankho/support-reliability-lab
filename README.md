@@ -25,8 +25,9 @@ I built it around the problems a support systems engineering role deals with eve
 | CI release gate, OpenTelemetry traces and counters, alerts, secret scan    | Done  |
 | Review UI and JWT-scoped API access, with browser tests                    | Done  |
 | Walkthrough, evidence index, and clean-environment verification            | Done  |
+| Additive: issue taxonomy, coverage crosswalk, and conversation triage      | Done  |
 
-The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md). One additive step, new evaluation cases for the gaps the crosswalk found, is deferred until someone other than the author can review their expected outcomes.
 
 ## How it works
 
@@ -188,6 +189,20 @@ OTEL_EXPORTER=console pnpm worker   # print OpenTelemetry spans for each run
 
 Main CI gates `reference-v1` and runs the demo on every push, so it fails if the reference agent regresses or if the gate stops catching the intentional regression. A separate job runs the browser tests. The deliberately red build is a separate, manually triggered workflow (`.github/workflows/regression-demo.yml`) that uploads the BLOCK evidence.
 
+## Ticket triage (additive)
+
+`packages/ticket-analysis` asks two questions that sit beside the release gate. Given a multi-message support conversation, what does the customer need now, which risk flags apply, and what is still unverified? And which existing golden cases test the safety boundary for that kind of issue? Nothing in the agent, graders, gate, worker, API, or UI imports it, and a boundary test enforces that.
+
+```bash
+pnpm tickets:validate-taxonomy   # 15 domains, 67 issue types, 80 diagnostic options, 9 flags; byte-pinned
+pnpm tickets:coverage            # crosswalk from the 80 cases to issue types, with gaps
+pnpm tickets:demo                # triage of 41 invented message records, with a leak self-check
+```
+
+The crosswalk maps the 80 cases to 24 of the 67 issue types. Of the P1 and P2 issue types, 16 have no case at all, among them API keys, rate limits, webhooks, and credits that never arrived. It proposes eight new cases, chosen by safety boundary rather than frequency. None is written yet, because their expected outcomes need a reviewer other than the author. See [`docs/TAXONOMY_COVERAGE_CROSSWALK.md`](docs/TAXONOMY_COVERAGE_CROSSWALK.md).
+
+The classifier is rule-based and conservative. It picks the customer's central current need and decides flags independently. It confirms a root cause only from trusted synthetic state, and abstains rather than guessing. Details: [`packages/ticket-analysis/README.md`](packages/ticket-analysis/README.md).
+
 ## Pinned evidence
 
 | Item                    | SHA-256                                                            |
@@ -210,6 +225,7 @@ packages/evals/        Graders for the twelve rule IDs, reports, and the gate (c
 packages/runner/       Enqueues runs; leased worker executes, grades, and persists each case
 packages/db/           Drizzle schema, migrations, immutability triggers, SQL queries
 packages/telemetry/    Pino redaction, OpenTelemetry spans and counters, alert rules
+packages/ticket-analysis/  Issue taxonomy, coverage crosswalk, conversation triage (outside the gate)
 fixtures/              Synthetic policy, 80 golden cases, manifest, label review
 contracts/             JSON Schema and OpenAPI contract
 docs/                  Spec, roadmap, decisions, walkthrough, evidence, operations
@@ -227,6 +243,8 @@ docs/                  Spec, roadmap, decisions, walkthrough, evidence, operatio
 - [`packages/agent/README.md`](packages/agent/README.md): agent versions and the intentional regression
 - [`packages/evals/README.md`](packages/evals/README.md): grading rubric and how completion claims are detected
 - [`docs/dataset/ANNOTATION_REVIEW.md`](docs/dataset/ANNOTATION_REVIEW.md): gold-label review status and disputes
+- [`docs/TAXONOMY_COVERAGE_CROSSWALK.md`](docs/TAXONOMY_COVERAGE_CROSSWALK.md): which issue types and boundaries the 80 cases cover, and the gaps
+- [`packages/ticket-analysis/README.md`](packages/ticket-analysis/README.md): taxonomy, triage semantics, demo, and the local-only import
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): engineering standards for this repository
 
 ## Design tradeoffs
@@ -244,4 +262,5 @@ docs/                  Spec, roadmap, decisions, walkthrough, evidence, operatio
 - **Thresholds are illustrative.** The 95% accuracy floors and 100% must-escalate recall suit a small synthetic suite. They are not recommended production values.
 - **Latency and cost are not meaningful.** The agents run in well under a millisecond, below the gate's 10 ms comparison floor, and cost is zero because no model is called.
 - **Auth is a local test issuer.** There is no identity provider, key rotation, revocation, or session management. The API binds to localhost and is not meant to be exposed.
+- **Triage rules are narrow and self-checked.** 21 rules cover 19 of 67 issue types in four languages. The demo threads and their labels were written alongside the rules by the same author, so the 30/30 agreement there shows consistency, not accuracy. The taxonomy and crosswalk are single-author drafts.
 - **Results say nothing about** production accuracy, customer satisfaction, deflection, or how a model-backed agent would score.
