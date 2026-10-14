@@ -4,10 +4,17 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 06, comparisons, gate, and reports.
-- **Next action:** milestone 07. Fastify routes for readiness, datasets, run enqueue/list/detail, case results, comparison, gate, and metrics summary, with Zod validation, stable error bodies, pagination, and inject tests for every route and error class.
+- **Last completed milestone:** 07, validated HTTP API.
+- **Next action:** milestone 08. CI job that runs the reference evaluation and fails on BLOCK or ERROR, a manual regression-demo workflow, Pino redaction and correlation in the worker, basic OpenTelemetry spans and counters, and a scripted alert linked to failure and recovery.
 
 ## Log
+
+### Milestone 07: validated HTTP API
+
+- Implemented every spec endpoint in `apps/api` with strict Zod validation, opaque IDs, keyset and case-key cursors, a single error body, correlation IDs, a JSON-only 16 KiB body limit, and a per-workspace rate limit on run creation. `contracts/openapi.yaml` now describes the implemented API.
+- Added `pnpm worker`, which processes queued runs and records each gate (using the run's baseline when set).
+- 27 API integration tests through Fastify inject on Postgres, covering each route and the 400, 404, 409, 413, 415, 422, 429, 500, and 503 paths, workspace masking, pagination, filters, and the absence of gold labels in case detail. One more runner integration test covers gating against a baseline and failing closed on an unfinished one.
+- Verified by hand against the running server: readiness, enqueue (202), gate before processing (409 `RUN_NOT_FINISHED`), `pnpm worker -- --once` (completed, gate PASS), then the gate and case detail over HTTP.
 
 ### Milestone 06: comparisons, gate, and reports
 

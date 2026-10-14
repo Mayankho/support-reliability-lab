@@ -11,8 +11,8 @@ The build is split into ten milestones, each small enough to review as one pull 
 | 04  | Independent grading                     | Done    |
 | 05  | Persistence and worker                  | Done    |
 | 06  | Comparisons, gates, and reports         | Done    |
-| 07  | Validated HTTP API                      | Next    |
-| 08  | CI and telemetry                        | Planned |
+| 07  | Validated HTTP API                      | Done    |
+| 08  | CI and telemetry                        | Next    |
 | 09  | Review UI and authenticated API (P1)    | Planned |
 | 10  | Documentation and walkthrough           | Planned |
 

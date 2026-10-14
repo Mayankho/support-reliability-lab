@@ -29,6 +29,21 @@ importers:
 
   apps/api:
     dependencies:
+      '@srl/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@srl/dataset':
+        specifier: workspace:*
+        version: link:../../packages/dataset
+      '@srl/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@srl/evals':
+        specifier: workspace:*
+        version: link:../../packages/evals
+      '@srl/runner':
+        specifier: workspace:*
+        version: link:../../packages/runner
       fastify:
         specifier: 5.12.5
         version: 5.12.5

@@ -1,16 +1,17 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { loadRepoEnv } from '@srl/db';
 import { ConfigError, loadConfig } from './config.ts';
 import { startServer } from './server.ts';
 
-const envPath = resolve(process.cwd(), '.env');
-if (existsSync(envPath)) {
-  process.loadEnvFile(envPath);
-}
+loadRepoEnv();
 
 try {
   const config = loadConfig(process.env);
-  await startServer(config);
+  const app = await startServer(config);
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.once(signal, () => {
+      void app.close().then(() => process.exit(0));
+    });
+  }
 } catch (error) {
   const message =
     error instanceof ConfigError

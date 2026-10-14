@@ -32,6 +32,7 @@ export {
   type ClaimedJob,
   type FinishRunInput,
 } from './queries/jobs.ts';
+export { workspaceMetrics, type WorkspaceMetrics } from './queries/metrics.ts';
 export {
   countCaseResults,
   insertCaseResult,

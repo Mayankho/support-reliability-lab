@@ -19,7 +19,8 @@ I built it around the problems a support systems engineering role deals with eve
 | Twelve independent graders with fail-closed error handling                 | Done    |
 | Postgres evidence store and leased worker with idempotent results          | Done    |
 | Fail-closed release gate, baseline comparison, JSON and HTML reports, demo | Done    |
-| Validated HTTP API, CI evaluation gate and telemetry, review UI            | Planned |
+| Validated HTTP API with workspace-scoped reads and a background worker     | Done    |
+| CI evaluation gate and telemetry, review UI with JWT auth                  | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -79,10 +80,25 @@ If port 5432 is already in use, run `POSTGRES_PORT=5433 docker compose up -d db`
 
 The server binds to `127.0.0.1` only, and startup is rejected if `MODEL_ENABLED` or `ALLOW_EXTERNAL_CALLS` is `true`.
 
+### Running an evaluation through the API
+
+```bash
+pnpm dev                                  # terminal 1: API
+pnpm worker                               # terminal 2: executes queued runs and records gates
+curl -s -X POST http://127.0.0.1:3000/api/v1/evaluation-runs \
+  -H 'content-type: application/json' \
+  -d '{"datasetVersion":"v1","agentVersion":"regression-demo-v1","runMode":"offline"}'
+# => 202 {"runId":"…","status":"queued"}
+curl -s http://127.0.0.1:3000/api/v1/evaluation-runs/<runId>/gate          # BLOCK + blockers
+curl -s http://127.0.0.1:3000/api/v1/evaluation-runs/<runId>/cases/REF-001 # case evidence and trace
+```
+
+Endpoints and error codes are documented in [`contracts/openapi.yaml`](contracts/openapi.yaml).
+
 ## Repository layout
 
 ```text
-apps/api/              Fastify service: config validation, health route
+apps/api/              Fastify API: runs, cases, comparison, gate, metrics, readiness
 packages/contracts/    Zod schemas for agent input/output and golden cases
 packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
 packages/dataset/      Fixture loader and eval:validate-data

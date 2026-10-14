@@ -7,9 +7,15 @@
     "dev": "node --watch src/main.ts",
     "start": "node src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
+    "@srl/contracts": "workspace:*",
+    "@srl/dataset": "workspace:*",
+    "@srl/db": "workspace:*",
+    "@srl/evals": "workspace:*",
+    "@srl/runner": "workspace:*",
     "fastify": "5.12.5",
     "zod": "4.6.7"
   },

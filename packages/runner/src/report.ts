@@ -137,3 +137,22 @@ export async function evaluateAndGate(
   const paths = await writeRunArtifacts(outDir, report, result.artifact);
   return { status: result.status, report, gate: result.artifact, paths };
 }
+
+/**
+ * Gates a run that has just finished, comparing against its baseline run when it has one. A baseline
+ * that is missing or unfinished is passed through as-is so the gate fails closed rather than silently
+ * skipping the comparison.
+ */
+export async function gateFinishedRun(
+  db: Db,
+  runId: string,
+  artifactsRoot: string,
+): Promise<GateOutcome> {
+  const run = await getRun(db, runId);
+  if (run === null) {
+    throw new Error(`run ${runId} not found`);
+  }
+  const baseline =
+    run.baselineRunId === null ? undefined : await buildReportFromDb(db, run.baselineRunId);
+  return evaluateAndGate(db, runId, `${artifactsRoot.replace(/\/$/u, '')}/${runId}`, baseline);
+}

@@ -1,3 +1,6 @@
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { agentSourceHash, getAgent } from '@srl/agent';
 import type { AgentAdapter, AgentOutput } from '@srl/contracts';
@@ -14,6 +17,7 @@ import {
   type TestDatabase,
 } from '@srl/db';
 import { DEFAULT_RUN_CONFIG } from './execute.ts';
+import { gateFinishedRun } from './report.ts';
 import { RunRequestError, enqueueRun, ensureDataset, loadVerifiedDataset } from './service.ts';
 import { processClaimedJob, workOnce, type AgentResolver } from './worker.ts';
 
@@ -167,6 +171,46 @@ describe('interruption and recovery', () => {
       gateStatus: null,
     });
     expect((await getJobForRun(db(), runId))?.status).toBe('failed');
+  });
+});
+
+describe('gating after the worker finishes', () => {
+  it('gates against the baseline run and fails closed when the baseline is unfinished', async () => {
+    const out = await mkdtemp(join(tmpdir(), 'srl-gate-'));
+    const worker = { db: db(), workerId: 'worker-gate', leaseMs: 30_000 };
+
+    const reference = await enqueue();
+    await workOnce(worker);
+    expect((await gateFinishedRun(db(), reference, out)).status).toBe('PASS');
+
+    const regression = await enqueueRun(db(), {
+      datasetVersion: 'v1',
+      agentVersion: 'regression-demo-v1',
+      baselineRunId: reference,
+      workspaceId: 'ws_demo',
+      actor: 'test',
+      correlationId: 'c',
+    });
+    await workOnce(worker);
+    const blocked = await gateFinishedRun(db(), regression, out);
+    expect(blocked.status).toBe('BLOCK');
+    expect(blocked.gate.blockers).toContain('regression:new_critical:NO_FALSE_COMPLETION:REF-001');
+
+    const unfinishedBaseline = await enqueue();
+    const candidate = await enqueueRun(db(), {
+      datasetVersion: 'v1',
+      agentVersion: 'repaired-v1',
+      baselineRunId: unfinishedBaseline,
+      workspaceId: 'ws_demo',
+      actor: 'test',
+      correlationId: 'c',
+    });
+    const claimed = await claimNextJob(db(), 'worker-gate', 30_000);
+    expect(claimed?.runId).toBe(unfinishedBaseline);
+    await workOnce(worker);
+    const errored = await gateFinishedRun(db(), candidate, out);
+    expect(errored.status).toBe('ERROR');
+    expect(errored.gate.blockers).toContain('incompatible_baseline:baseline_incomplete');
   });
 });
 

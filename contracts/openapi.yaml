@@ -1,13 +1,15 @@
 openapi: 3.1.0
 info:
-  title: Support Reliability Lab API (proposed contract)
+  title: Support Reliability Lab API
   version: 1.0.0
   description: >-
-    Local synthetic support-agent evaluation service. This is a planning contract,
-    not a running API. P0 must bind to localhost; P1 must implement JWT and
-    workspace-scoped authorization before exposure beyond localhost.
+    Local evaluation service for synthetic support-agent runs. Binds to 127.0.0.1 only. In local
+    mode every request acts in the single workspace `ws_demo`; JWT authentication and
+    workspace-scoped authorization are required before exposure beyond localhost. Request bodies
+    must be JSON and at most 16 KiB. Every error uses the Error schema, and every response carries
+    an `x-correlation-id` header (a safe incoming value is echoed; otherwise one is generated).
 servers:
-  - url: http://localhost:3000
+  - url: http://127.0.0.1:3000
 paths:
   /health/live:
     get:
@@ -25,23 +27,29 @@ paths:
     get:
       summary: Database and dataset readiness
       responses:
-        '200': { description: Ready }
-        '503': { description: Not ready }
+        '200': { description: Ready, content: { application/json: { schema: { $ref: '#/components/schemas/Readiness' } } } }
+        '503': { description: Not ready, content: { application/json: { schema: { $ref: '#/components/schemas/Readiness' } } } }
   /api/v1/datasets:
     get:
-      summary: Versioned synthetic dataset manifests
+      summary: Stored dataset versions and hashes
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
       responses:
-        '200': { description: Paginated manifests }
+        '200': { description: Dataset list }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /api/v1/evaluation-runs:
     get:
-      summary: List evaluation runs
+      summary: List runs in the caller's workspace, newest first
       parameters:
-        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
-        - { in: query, name: cursor, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { in: query, name: cursor, schema: { type: string }, description: Opaque cursor from nextCursor }
+        - { in: query, name: status, schema: { enum: [queued, running, completed, errored, cancelled] } }
       responses:
-        '200': { description: Run list }
+        '200': { description: 'Run list with nextCursor (null on the last page)' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     post:
       summary: Enqueue an offline evaluation run
+      description: The run is executed by `pnpm worker`, which records the release gate when the run finishes.
       requestBody:
         required: true
         content:
@@ -49,70 +57,104 @@ paths:
             schema: { $ref: '#/components/schemas/CreateRunRequest' }
       responses:
         '202':
-          description: Queued, not completed
+          description: Queued, not completed. Location points at the run.
+          headers: { location: { schema: { type: string } } }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/RunEnqueued' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { description: Baseline run not found in this workspace, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: 'Baseline used a different dataset (INCOMPATIBLE_RUNS), or the dataset on disk changed (CONFLICT)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '413': { $ref: '#/components/responses/Error' }
+        '415': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/Error' }
   /api/v1/evaluation-runs/{runId}:
     get:
-      summary: Run status and aggregate metrics
+      summary: Run provenance, status, case-level denominators, and metrics
       parameters:
         - { $ref: '#/components/parameters/RunId' }
       responses:
-        '200': { description: Run metadata }
-        '404': { description: Not found or unavailable }
+        '200': { description: Run detail; metrics is null until the run completes }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/evaluation-runs/{runId}/cases:
     get:
-      summary: Paginated rule and case outcomes
+      summary: Paginated case results
       parameters:
         - { $ref: '#/components/parameters/RunId' }
-        - { in: query, name: verdict, schema: { enum: [pass, fail, error] } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { in: query, name: cursor, schema: { type: string } }
+        - { in: query, name: status, schema: { enum: [pass, fail, error] } }
+        - { in: query, name: rule, schema: { $ref: '#/components/schemas/RuleId' } }
+        - { in: query, name: verdict, schema: { enum: [pass, fail, error, not_applicable] } }
       responses:
-        '200': { description: Case results }
+        '200': { description: 'Case results with total (matching cases) and nextCursor' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /api/v1/evaluation-runs/{runId}/cases/{caseId}:
     get:
-      summary: Sanitized case drilldown
+      summary: Sanitized case evidence
+      description: Input (redacted), agent output, all rule results, a fix-layer hypothesis, and trace spans. Gold labels are not returned.
       parameters:
         - { $ref: '#/components/parameters/RunId' }
-        - { in: path, name: caseId, required: true, schema: { type: string } }
+        - { in: path, name: caseId, required: true, schema: { type: string, pattern: '^[A-Z]{2,5}-[0-9]{3}$' } }
       responses:
         '200': { description: Case evidence }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/evaluation-runs/{runId}/compare:
     get:
-      summary: Paired comparison against baseline run
+      summary: Paired case-level comparison against a baseline run
       parameters:
         - { $ref: '#/components/parameters/RunId' }
         - { in: query, name: baselineRunId, required: true, schema: { type: string, format: uuid } }
       responses:
-        '200': { description: Paired comparison }
-        '409': { description: Dataset manifest mismatch }
+        '200': { description: New failures, fixed cases, unchanged failures, metric deltas }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Runs are unfinished (RUN_NOT_FINISHED) or incompatible (INCOMPATIBLE_RUNS); no delta is reported', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /api/v1/evaluation-runs/{runId}/gate:
     get:
-      summary: Immutable release-gate result
+      summary: Recorded release gate (immutable once written)
       parameters:
         - { $ref: '#/components/parameters/RunId' }
       responses:
         '200':
-          description: PASS, BLOCK or ERROR; completed run does not imply PASS
+          description: PASS, BLOCK, or ERROR. A completed run does not imply PASS.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/GateResult' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Run not finished (RUN_NOT_FINISHED) or finished without a recorded gate (GATE_NOT_RECORDED)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /api/v1/metrics/summary:
     get:
-      summary: SQL aggregates with explicit denominators
+      summary: Workspace aggregates with distinct-case denominators
       responses:
-        '200': { description: Aggregates }
+        '200': { description: Runs by status, gates by status, latest completed run per agent version }
 components:
   parameters:
     RunId:
       in: path
       name: runId
       required: true
+      description: Opaque run ID. Malformed, missing, and other-workspace IDs all return 404.
       schema: { type: string, format: uuid }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
   responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     ValidationError:
-      description: Invalid data
+      description: Invalid input (VALIDATION_FAILED); the message names fields, never values
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Not found or not visible to this workspace (NOT_FOUND)
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
@@ -122,9 +164,9 @@ components:
       additionalProperties: false
       required: [datasetVersion, agentVersion, runMode]
       properties:
-        datasetVersion: { type: string }
-        agentVersion: { type: string }
-        baselineRunId: { type: [string, 'null'], format: uuid }
+        datasetVersion: { type: string, pattern: '^v[0-9]+(\.[0-9]+)?$' }
+        agentVersion: { type: string, enum: [reference-v1, regression-demo-v1, repaired-v1] }
+        baselineRunId: { type: [string, 'null'], format: uuid, default: null }
         runMode: { type: string, const: offline }
         maxConcurrency: { type: integer, minimum: 1, maximum: 8, default: 4 }
     RunEnqueued:
@@ -133,23 +175,49 @@ components:
       properties:
         runId: { type: string, format: uuid }
         status: { type: string, const: queued }
+    Readiness:
+      type: object
+      required: [status, checks]
+      properties:
+        status: { enum: [ready, not_ready] }
+        checks:
+          type: object
+          properties:
+            database: { enum: [ok, unavailable, not_configured] }
+            dataset: { enum: [ok, invalid] }
+    RuleId:
+      enum:
+        [SCHEMA_VALID, TENANT_ISOLATION, NO_FALSE_COMPLETION, NO_UNSAFE_ACTION, INTENT_MATCH, DECISION_MATCH,
+         ROUTE_MATCH, ESCALATION_MATCH, POLICY_CITATIONS, RESPONSE_CONCEPTS, LATENCY_BUDGET, COST_ACCOUNTING]
     GateResult:
       type: object
-      required: [gateVersion, candidateRunId, datasetVersion, status, blockers, evaluatorVersion, caseCount]
+      required: [gateVersion, status, candidateRunId, datasetVersion, datasetSha256, blockers, evaluatorVersion, caseCount]
       properties:
         gateVersion: { type: string }
+        generatedAt: { type: string, format: date-time }
+        status: { enum: [PASS, BLOCK, ERROR] }
         candidateRunId: { type: string }
         baselineRunId: { type: [string, 'null'] }
+        agentVersion: { type: string }
+        agentSourceHash: { type: string }
         datasetVersion: { type: string }
-        status: { enum: [PASS, BLOCK, ERROR] }
-        blockers: { type: array, items: { type: string } }
+        datasetSha256: { type: string }
+        policySha256: { type: string }
         evaluatorVersion: { type: string }
         caseCount: { type: integer, minimum: 0 }
+        blockers: { type: array, items: { type: string }, description: 'e.g. critical:NO_FALSE_COMPLETION:REF-001' }
+        warnings: { type: array, items: { type: string } }
         metrics: { type: object, additionalProperties: true }
+        denominators: { type: object, additionalProperties: { type: integer } }
+        thresholds: { type: object, additionalProperties: { type: number } }
+        comparison: { type: [object, 'null'] }
     Error:
       type: object
       required: [code, message, correlationId]
       properties:
-        code: { type: string }
+        code:
+          enum:
+            [BAD_REQUEST, VALIDATION_FAILED, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, INCOMPATIBLE_RUNS,
+             RUN_NOT_FINISHED, GATE_NOT_RECORDED, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, RATE_LIMITED, NOT_READY, INTERNAL]
         message: { type: string }
         correlationId: { type: string }

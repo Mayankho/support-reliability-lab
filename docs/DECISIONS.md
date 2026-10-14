@@ -104,4 +104,25 @@ Every blocker names its rule and case (`critical:NO_FALSE_COMPLETION:REF-001`), 
 
 `pnpm demo` runs reference, regression, and repaired versions against one stored dataset, with the reference run as baseline for the other two. It records each gate on its run (once) and writes `gate.json`, `run-report.json`, and `run-report.html` per run, plus an index page. It exits 0 only if it observes PASS, BLOCK, PASS, the BLOCK includes a critical `NO_FALSE_COMPLETION` failure, and all three runs share one dataset hash. Nothing in the gate knows which agent version it is evaluating.
 
-I did not commit a frozen baseline report. The gate already requires the dataset, policy, and evaluator version to match, so a committed baseline would go stale on any evaluator change and could not prove more than running the reference version fresh. `pnpm eval:gate --report … --baseline …` accepts any two report files for offline comparison.
+I did not commit a frozen baseline report (the CI decision is in ADR-015). The gate already requires the dataset, policy, and evaluator version to match, so a committed baseline would go stale on any evaluator change and could not prove more than running the reference version fresh. `pnpm eval:gate --report … --baseline …` accepts any two report files for offline comparison.
+
+## ADR-014: The API enqueues and reads; it never runs agents or decides gates inline
+
+The Fastify API (`apps/api`) exposes the endpoints from the spec: liveness and readiness, datasets, run enqueue, list, and detail, case results and case detail, paired comparison, the recorded gate, and workspace metrics. `contracts/openapi.yaml` documents the implemented behavior.
+
+`POST /api/v1/evaluation-runs` validates and enqueues, then returns `202` with a `Location` header. A separate process, `pnpm worker`, leases the job, executes it, and records the gate when the run finishes, using the run's baseline when it has one. If that baseline is unfinished, the gate is ERROR. Keeping execution out of the request path means a slow or hung agent cannot hold an HTTP connection, and every result goes through the same leased, idempotent path as the CLI.
+
+Request rules:
+
+- Every body, query, and path parameter is parsed with a strict Zod schema. Unknown fields are rejected. Validation errors return `422` and name fields, never values.
+- Bodies are JSON only, capped at 16 KiB. The default `text/plain` parser is removed, so other content types get `415` rather than reaching validation.
+- Run IDs are opaque UUIDs. A malformed ID, a missing run, and another workspace's run all return the same `404`, so IDs cannot be probed.
+- Every response carries `x-correlation-id`. A safe incoming value is echoed; anything else is replaced with a generated UUID.
+- Unexpected failures return `500` with a fixed message. Only the error name and code are logged, so connection strings and stack traces never reach the client.
+- Run creation is rate-limited per workspace with a fixed window, returning `429`.
+
+Workspace scoping goes through one request hook. In local mode it resolves every request to `ws_demo`; milestone 09 replaces the resolver with verified JWT claims, without touching the routes. Case detail omits gold labels: expected values belong behind authenticated, reviewer-scoped access, which also arrives in milestone 09.
+
+Compare refuses to report a delta for runs on different datasets, policies, or evaluator versions (`409 INCOMPATIBLE_RUNS`) and requires both runs to be completed.
+
+The server binds to `127.0.0.1`. Unauthenticated local mode is not safe to expose on a network, and the docs say so.
