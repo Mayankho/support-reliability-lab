@@ -38,6 +38,20 @@ describe('agent package boundary', () => {
   );
 
   it.each(files.map((file) => [file.name, file.text]))(
+    '%s has no network access',
+    (_name, text) => {
+      const imports = [...text.matchAll(/from\s+'([^']+)'/gu)].map((match) => match[1]);
+      for (const specifier of imports) {
+        expect(specifier).not.toMatch(
+          /^(node:)?(http|https|http2|net|tls|dgram|dns|child_process|worker_threads)$|^(undici|axios|node-fetch|ws)$/u,
+        );
+      }
+      expect(text).not.toMatch(/\b(fetch|WebSocket|XMLHttpRequest)\s*\(/u);
+      expect(text).not.toMatch(/\bimport\s*\(/u);
+    },
+  );
+
+  it.each(files.map((file) => [file.name, file.text]))(
     '%s does not reference gold labels, case IDs, or grader rule names',
     (_name, text) => {
       expect(text).not.toMatch(/\bexpected\b/u);

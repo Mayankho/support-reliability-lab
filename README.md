@@ -8,6 +8,8 @@ Everything runs offline on synthetic data. There are no API keys, real accounts,
 
 I built it around the problems a support systems engineering role deals with every day: agent routing and escalation, eval rubrics, release gates, and billing guardrails. The support policy (`SYN-POLICY-1`) and every customer record are fictional and not affiliated with any company.
 
+**Start here:** the [five-minute walkthrough](docs/WALKTHROUGH.md), or the [evidence index](docs/EVIDENCE.md), which maps each claim below to its code, tests, and commit.
+
 ## Status
 
 | Milestone                                                                  | State |
@@ -22,6 +24,7 @@ I built it around the problems a support systems engineering role deals with eve
 | Validated HTTP API with workspace-scoped reads and a background worker     | Done  |
 | CI release gate, OpenTelemetry traces and counters, alerts, secret scan    | Done  |
 | Review UI and JWT-scoped API access, with browser tests                    | Done  |
+| Walkthrough, evidence index, and clean-environment verification            | Done  |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -45,6 +48,17 @@ The design rests on four guarantees:
 - **The gate fails closed.** A grader error, timeout, or missing result blocks the release. It is never counted as a pass.
 - **Evidence is pinned.** The policy file, each policy document, and the dataset are SHA-256 hashed, so a silent edit fails a test.
 
+### Trust boundaries
+
+| Component     | Can see                                                 | Cannot do                                                                        |
+| ------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Agent version | Customer message, account context, supplied policy docs | Read gold labels or the database, call the network, execute any account action   |
+| Graders       | Agent output and gold labels                            | Import agent or policy code (a boundary test fails the build)                    |
+| Gate          | Case and rule results                                   | Trust report metrics: it recomputes them, and missing evidence is `ERROR`        |
+| Postgres      | Everything persisted                                    | Edit or delete stored cases, results, traces, or audit rows (triggers reject it) |
+| API           | Runs in the caller's workspace                          | Run agents inline, show labels to anyone but an authenticated reviewer           |
+| Review UI     | What the API returns                                    | Compute or override a gate                                                       |
+
 ## What the demo shows
 
 `pnpm demo` runs three agent versions against the same 80 frozen cases (dataset sha256 `e02ae60e…cf1d`) and exits 0 only if it observes this pattern:
@@ -56,6 +70,53 @@ The design rests on four guarantees:
 | `repaired-v1`        | PASS  | Same cases pass; no new failures versus the reference run                                                                                |
 
 The regression is a one-line copy change: the refund-review reply says "I've refunded your credit purchase" while every structured field, including `claimsActionCompleted: false`, stays correct. Only a grader that reads the reply text catches it. The repair restores the copy and adds a guard that refuses completion wording. Details: [`packages/agent/README.md`](packages/agent/README.md).
+
+The release decision for the blocked build, and the failing case it links to:
+
+![Release decision showing BLOCK with ten blockers, pinned hashes, and thresholds](docs/images/release-decision.png)
+
+![Case REF-001 showing correct structured fields, the false completion reply, and the failed NO_FALSE_COMPLETION rule](docs/images/case-detail.png)
+
+The same evidence over the API, trimmed from `GET /api/v1/evaluation-runs/<runId>/cases/REF-001`:
+
+```json
+{
+  "caseId": "REF-001",
+  "status": "fail",
+  "traceId": "dc482043246782c653f502d94d134ba5",
+  "output": {
+    "customerReply": "Done! I've refunded your credit purchase to your original payment method. ...",
+    "claimsActionCompleted": false
+  },
+  "rules": [
+    {
+      "ruleId": "NO_FALSE_COMPLETION",
+      "verdict": "fail",
+      "severity": "critical",
+      "evidenceCode": "affirmative_completion_language",
+      "evidence": "Reply says a protected action happened or will happen: \"i've refunded your credit purchase to your original payment method.\" \"done!\""
+    }
+  ],
+  "trace": [
+    {
+      "kind": "eval.case",
+      "attributes": {
+        "status": "fail",
+        "caseHash": "578b330ee7c74945",
+        "agentVersion": "regression-demo-v1"
+      }
+    },
+    { "kind": "agent.invoke", "attributes": { "durationMs": 0.075, "executionError": null } },
+    {
+      "kind": "grader.evaluate",
+      "attributes": { "ruleCount": 12, "failedRules": ["NO_FALSE_COMPLETION"] }
+    }
+  ],
+  "suggestedFixLayers": ["prompt"]
+}
+```
+
+Span attributes carry IDs, a hashed case key, and statuses, never customer text. The other eleven rule results are omitted here. Sample `gate.json` and HTML reports from a clean run are in [`docs/demo/`](docs/demo/), and the remaining views are in [`docs/images/`](docs/images/).
 
 ## Quick start
 
@@ -77,7 +138,7 @@ pnpm dev                                  # http://127.0.0.1:3000
 curl http://127.0.0.1:3000/health/live    # {"status":"ok"}
 ```
 
-If port 5432 is already in use, run `POSTGRES_PORT=5433 docker compose up -d db` and update `DATABASE_URL` in `.env` to match.
+If port 5432 is already in use, run `POSTGRES_PORT=5433 docker compose up -d db` and update `DATABASE_URL` in `.env` to match. Configuration, every command's exit codes, and troubleshooting are in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
 The server binds to `127.0.0.1` only, and startup is rejected if `MODEL_ENABLED` or `ALLOW_EXTERNAL_CALLS` is `true`.
 
@@ -125,7 +186,16 @@ pnpm scan:sensitive     # keys, tokens, contact details, card numbers in tracked
 OTEL_EXPORTER=console pnpm worker   # print OpenTelemetry spans for each run
 ```
 
-Main CI gates `reference-v1` and runs the demo on every push, so it fails if the reference agent regresses or if the gate stops catching the intentional regression. The deliberately red build is a separate, manually triggered workflow (`.github/workflows/regression-demo.yml`) that uploads the BLOCK evidence.
+Main CI gates `reference-v1` and runs the demo on every push, so it fails if the reference agent regresses or if the gate stops catching the intentional regression. A separate job runs the browser tests. The deliberately red build is a separate, manually triggered workflow (`.github/workflows/regression-demo.yml`) that uploads the BLOCK evidence.
+
+## Pinned evidence
+
+| Item                    | SHA-256                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| Dataset `v1` (80 cases) | `e02ae60e86b80da3866098c0d731630d4e199cb11ebf40d78caa508f58e4cf1d` |
+| Policy `SYN-POLICY-1`   | `ff92f6522d75dc500798a993d3f2a4b0ff96e02f06bb791c47a9227628838f6a` |
+
+The evaluator version is `1.0.0`. Agent source hashes and a clean-environment verification record are in [`docs/EVIDENCE.md`](docs/EVIDENCE.md#observed-results). Every gate artifact records the dataset, policy, evaluator, agent source hash, and source commit it was produced from.
 
 ## Repository layout
 
@@ -134,19 +204,22 @@ apps/api/              Fastify API: runs, cases, comparison, gate, metrics, read
 apps/web/              React review UI and Playwright browser tests
 packages/contracts/    Zod schemas for agent input/output and golden cases
 packages/policies/     SYN-POLICY-1 registry, hashes, no-execution guard
-packages/dataset/      Fixture loader and eval:validate-data
+packages/dataset/      Fixture loader, eval:validate-data, sensitive-data scanner
 packages/agent/        reference-v1, regression-demo-v1, repaired-v1
-packages/evals/        Graders for the twelve rule IDs (cannot import the agent)
+packages/evals/        Graders for the twelve rule IDs, reports, and the gate (cannot import the agent)
 packages/runner/       Enqueues runs; leased worker executes, grades, and persists each case
 packages/db/           Drizzle schema, migrations, immutability triggers, SQL queries
 packages/telemetry/    Pino redaction, OpenTelemetry spans and counters, alert rules
 fixtures/              Synthetic policy, 80 golden cases, manifest, label review
-contracts/             JSON Schema and starter OpenAPI contract
-docs/                  Spec, roadmap, and design decisions
+contracts/             JSON Schema and OpenAPI contract
+docs/                  Spec, roadmap, decisions, walkthrough, evidence, operations
 ```
 
 ## Documentation
 
+- [`docs/WALKTHROUGH.md`](docs/WALKTHROUGH.md): a five-minute tour of the demo, the evidence, and why it can be trusted
+- [`docs/EVIDENCE.md`](docs/EVIDENCE.md): each claim mapped to code, tests, commits, and observed results
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md): configuration, commands, artifacts, troubleshooting
 - [`docs/TECHNICAL_SPEC.md`](docs/TECHNICAL_SPEC.md): requirements, rubrics, data model, API, and the threat model
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): milestones and status
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): design decisions and their tradeoffs
@@ -156,6 +229,19 @@ docs/                  Spec, roadmap, and design decisions
 - [`docs/dataset/ANNOTATION_REVIEW.md`](docs/dataset/ANNOTATION_REVIEW.md): gold-label review status and disputes
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): engineering standards for this repository
 
+## Design tradeoffs
+
+- **A deterministic, rule-based agent.** It makes every regression reproducible and keeps the project free to run. The cost is that it says nothing about how a language model would behave. The adapter interface is where a model-backed agent would plug in (ADR-010).
+- **Lexical graders.** Completion claims are detected with explicit patterns, negation handling, and tests, not a second model. They are auditable and fast, but a paraphrase they have never seen can slip through, which is why the repaired agent also guards its own copy (ADR-011).
+- **The database enforces immutability.** Triggers, not application code, reject edits to stored evidence, so a bug or a manual query cannot quietly rewrite history. Migrations get harder to write in exchange (ADR-012).
+- **No committed baseline report.** The gate compares against a fresh reference run, because a frozen report would go stale on any evaluator change (ADR-013).
+- **The API never runs agents.** Requests enqueue and a leased worker executes, so a hung agent cannot hold a connection and every result goes through one idempotent path (ADR-014).
+
 ## Limitations
 
-The dataset is synthetic and small (80 cases), and its starter labels have not yet been independently adjudicated. Release thresholds are illustrative. Results from this suite say nothing about production accuracy, customer satisfaction, or deflection.
+- **Synthetic and small.** 80 invented cases, one fictional policy, and three rule-based agents. Nothing here was measured on real customers, tickets, or a production system.
+- **Labels are a starter set.** One reviewer, the author, checked every label. Independent double annotation and adjudication have not happened, and GEN-012's required citation is disputed (see [`ANNOTATION_REVIEW.md`](docs/dataset/ANNOTATION_REVIEW.md)). All three builds agreeing with the labels on 80/80 cases shows consistency with that set, not accuracy.
+- **Thresholds are illustrative.** The 95% accuracy floors and 100% must-escalate recall suit a small synthetic suite. They are not recommended production values.
+- **Latency and cost are not meaningful.** The agents run in well under a millisecond, below the gate's 10 ms comparison floor, and cost is zero because no model is called.
+- **Auth is a local test issuer.** There is no identity provider, key rotation, revocation, or session management. The API binds to localhost and is not meant to be exposed.
+- **Results say nothing about** production accuracy, customer satisfaction, deflection, or how a model-backed agent would score.

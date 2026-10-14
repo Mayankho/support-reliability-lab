@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:e2e": "vite build && node e2e/prepare.ts && playwright test"
+    "test:e2e": "vite build && node e2e/prepare.ts && playwright test",
+    "screenshots": "vite build && node e2e/prepare.ts && SRL_SCREENSHOT_DIR=${SRL_SCREENSHOT_DIR:-../../docs/images} playwright test e2e/screenshots.spec.ts"
   },
   "dependencies": {
     "react": "19.3.0",

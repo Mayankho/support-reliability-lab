@@ -4,10 +4,17 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 09, review UI and authenticated API.
-- **Next action:** milestone 10. A five-minute walkthrough with screenshots, an evidence index that maps claims to files, tests, and commits, an example trace, and a fresh-clone check that the documented commands work without keys.
+- **Last completed milestone:** 10, documentation and walkthrough. The ten planned milestones are done.
+- **Next action:** the additive ticket-analysis package: a versioned issue taxonomy, a coverage crosswalk for the 80 cases, and conservative classification of synthetic support threads. It stays separate from the v1 gate.
 
 ## Log
+
+### Milestone 10: documentation and walkthrough
+
+- Added `docs/WALKTHROUGH.md` (five-minute tour), `docs/EVIDENCE.md` (claims mapped to code, tests, commits, and observed results), and `docs/OPERATIONS.md` (configuration, commands and exit codes, artifacts, troubleshooting). The README gained trust boundaries, screenshots, an example trace, pinned hashes, design tradeoffs, and fuller limitations.
+- Added `pnpm --filter @srl/web screenshots`, which regenerates `docs/images/` from a fresh e2e database. Committed screenshots and the sample reports in `docs/demo/` come from a clean-container run of the committed tree.
+- Verified in a clean `node:24.21.0` container with a new Postgres 16: install, lint, format, typecheck, 291 unit tests, data validation, migrate, seed, 58 integration tests, reference gate, demo, alerts, scan, and 4 browser tests all exited 0. The first attempt caught two unformatted Markdown files in the milestone 09 commit; that was fixed before anything was pushed.
+- Added a boundary test that agent code cannot import network modules or call `fetch`, so the trust-boundary table states a tested property rather than an intention.
 
 ### Milestone 09: review UI and authenticated API
 

@@ -14,7 +14,7 @@ The build is split into ten milestones, each small enough to review as one pull 
 | 07  | Validated HTTP API                      | Done   |
 | 08  | CI and telemetry                        | Done   |
 | 09  | Review UI and authenticated API (P1)    | Done   |
-| 10  | Documentation and walkthrough           | Next   |
+| 10  | Documentation and walkthrough           | Done   |
 
 ## 00 — Scaffold, local environment, and health
 

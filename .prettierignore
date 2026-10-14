@@ -10,3 +10,4 @@ packages/db/migrations
 apps/web/dist
 apps/web/playwright-report
 apps/web/test-results
+docs/demo
