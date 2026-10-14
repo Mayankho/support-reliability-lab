@@ -89,10 +89,10 @@ A separate package, `packages/ticket-analysis`, for triaging synthetic support c
 | #   | Step                                               | Status  |
 | --- | -------------------------------------------------- | ------- |
 | T01 | Taxonomy registry and coverage crosswalk           | Done    |
-| T02 | Thread parsing on synthetic conversations          | Next    |
-| T03 | Conservative classification and independent flags  | Planned |
+| T02 | Thread parsing on synthetic conversations          | Done    |
+| T03 | Conservative classification and independent flags  | Done    |
 | T04 | Gap-driven synthetic case pack (only if warranted) | Planned |
-| T05 | Demonstration and an optional local-only import    | Planned |
+| T05 | Demonstration and an optional local-only import    | Next    |
 
 **T01:** a byte-pinned registry (15 domains, 67 issue types, 80 diagnostic options, 9 risk flags) with recomputed counts and referential checks, and a draft crosswalk from each golden case to candidate issue types, flags, and the safety boundary it exercises. _Closed by:_ registry and crosswalk validation tests, and a generated crosswalk document that a test keeps in sync.
 

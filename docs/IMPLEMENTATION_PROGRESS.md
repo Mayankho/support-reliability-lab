@@ -4,10 +4,17 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** T01, taxonomy registry and coverage crosswalk. The ten core milestones are done.
-- **Next action:** T02, thread parsing on synthetic conversations: bounded record validation that drops names and emails at the boundary, deterministic grouping and ordering, anomaly reporting, and quoted-history stripping.
+- **Last completed milestone:** T03, conservative classification and independent flags. The ten core milestones are done.
+- **Next action:** T05, `pnpm tickets:demo` on invented conversations with an author-labeled development set, a self-check that no secret reaches the output, and an optional local-only import that refuses paths inside the repository.
 
 ## Log
+
+### T02 and T03: thread parsing and classification
+
+- Added bounded record parsing (names and emails dropped at the boundary, invalid records rejected by position without values), deterministic grouping with seven anomaly codes, quoted-history and signature stripping in four languages, and secret detection and redaction.
+- Added `triageThread`: central current need with remedy-based ordering for failed-job credit cases, body before subject, follow-up inheritance, agent claims kept unverified, independent flags, L3 only from trusted synthetic state with recorded contradictions, abstention for unsupported content and languages, and no confidence numbers. 21 rules cover 19 issue types in English, Spanish, French, and German.
+- Added `F-OUT` incident candidates (five distinct threads, same issue, one hour) and `scoreAgreement`, which keeps exact, acceptable-alternate, secondary, abstention, and per-flag measures separate.
+- Tests: 87 new, including opposite primary issues on the same facts, a last-resort tie, subject conflict and fill-in, a changed need, inherited follow-ups, agent text never read as the request, quoted refunds ignored, `F-SEC` under a benign primary, human-only routing, authority claims, prompt injection, `F-LEG` and `F-REG` only from stated facts, `F-OUT` never from one report, ambiguous refunds, unsupported languages, state contradictions, and output containing no text.
 
 ### T01: taxonomy registry and coverage crosswalk
 
