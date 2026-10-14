@@ -11,6 +11,7 @@ import {
 } from '@srl/db';
 import { EVALUATOR_VERSION } from '@srl/evals';
 import { getSyntheticPolicy } from '@srl/policies';
+import { recordDatasetIntegrityError } from '@srl/telemetry';
 import { DEFAULT_RUN_CONFIG, type RunConfig } from './execute.ts';
 import { workOnce, type WorkerOptions } from './worker.ts';
 
@@ -48,6 +49,7 @@ export function currentSourceCommit(): string | null {
 export async function loadVerifiedDataset(version: string): Promise<ValidatedDataset> {
   const loaded = await loadDataset(version);
   if (!loaded.ok) {
+    recordDatasetIntegrityError();
     throw new RunRequestError(
       'DATASET_INVALID',
       `dataset ${version} failed validation: ${loaded.issues.map((issue) => issue.code).join(', ')}`,

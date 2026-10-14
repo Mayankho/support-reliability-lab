@@ -18,6 +18,15 @@ import {
   type Db,
 } from '@srl/db';
 import { EVALUATOR_VERSION } from '@srl/evals';
+import {
+  SpanStatusCode,
+  recordCaseResult,
+  recordLeaseRecovery,
+  recordRunFinished,
+  recordingTraceId,
+  startChildSpan,
+  type Span,
+} from '@srl/telemetry';
 import { executeCase, mapWithConcurrency, prepareCase, type CaseResult } from './execute.ts';
 
 export interface AgentResolution {
@@ -68,6 +77,7 @@ export interface WorkerOutcome {
 class LeaseLostError extends Error {}
 
 const shortHash = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 16);
+const randomHex = (bytes: number) => randomBytes(bytes).toString('hex');
 
 function costFields(result: CaseResult, adapterKind: AdapterKind) {
   const usage = result.output?.model;
@@ -84,6 +94,11 @@ function costFields(result: CaseResult, adapterKind: AdapterKind) {
     : { inputTokens: null, outputTokens: null, costUsd: null, costSource: 'unavailable' as const };
 }
 
+/** Span ID of a recording span, or a random one when telemetry is off, so stored traces stay linkable. */
+function spanIdOf(span: Span): string {
+  return recordingTraceId(span) === null ? randomHex(8) : span.spanContext().spanId;
+}
+
 /** Claims the next runnable job, if any, and processes it. */
 export async function workOnce(options: WorkerOptions): Promise<WorkerOutcome | null> {
   const job = await claimNextJob(options.db, options.workerId, options.leaseMs);
@@ -97,13 +112,34 @@ export async function processClaimedJob(
   const { db, workerId, leaseMs } = options;
   const resolveAgent = options.resolveAgent ?? resolveBuiltInAgent;
   let stored = 0;
-  const outcome = (kind: WorkerOutcomeKind, errorCode: string | null = null): WorkerOutcome => ({
-    runId: job.runId,
-    outcome: kind,
-    errorCode,
-    storedByThisWorker: stored,
-    recoveredStaleLease: job.recoveredStaleLease,
+  const runSpan = startChildSpan('eval.run', null, {
+    'srl.run_id': job.runId,
+    'srl.attempt': job.attempts,
+    'srl.evaluator_version': EVALUATOR_VERSION,
   });
+  const traceId = recordingTraceId(runSpan) ?? randomHex(16);
+  if (job.recoveredStaleLease) {
+    recordLeaseRecovery();
+  }
+
+  const outcome = (kind: WorkerOutcomeKind, errorCode: string | null = null): WorkerOutcome => {
+    runSpan.setAttribute('srl.outcome', kind);
+    if (errorCode !== null) {
+      runSpan.setAttribute('srl.error_class', errorCode);
+      runSpan.setStatus({ code: SpanStatusCode.ERROR });
+    }
+    runSpan.end();
+    if (kind === 'completed' || kind === 'errored') {
+      recordRunFinished(kind);
+    }
+    return {
+      runId: job.runId,
+      outcome: kind,
+      errorCode,
+      storedByThisWorker: stored,
+      recoveredStaleLease: job.recoveredStaleLease,
+    };
+  };
   const fail = async (errorCode: string): Promise<WorkerOutcome> => {
     const finished = await finishRun(db, {
       jobId: job.jobId,
@@ -121,6 +157,7 @@ export async function processClaimedJob(
     if (run === null) {
       return await fail('run_missing');
     }
+    runSpan.setAttribute('srl.agent_version', run.agentVersion);
     const config = runConfigSchema.safeParse(run.config);
     if (!config.success) {
       return await fail('run_config_invalid');
@@ -147,52 +184,83 @@ export async function processClaimedJob(
     let leaseLost = false;
     await mapWithConcurrency(pending, config.data.maxConcurrency, async (input) => {
       if (leaseLost) return;
-      const goldenCase = rebuildGoldenCase(input, labels.get(input.caseId));
-      const prepared = prepareCase(goldenCase, `${run.id}:${input.caseKey}`);
-      const result = await executeCase(prepared, agent.adapter, agent.adapterKind, config.data);
-      const traceId = randomBytes(16).toString('hex');
-      const failedRules = result.rules
-        .filter((rule) => rule.verdict === 'fail' || rule.verdict === 'error')
-        .map((rule) => rule.ruleId);
-
-      const inserted = await insertCaseResult(db, {
-        runId: run.id,
-        caseId: input.caseId,
-        status: result.status,
-        executionError: result.executionError,
-        output: result.output,
-        durationMs: result.durationMs,
-        ...costFields(result, agent.adapterKind),
-        traceId,
-        rules: result.rules,
-        traceSpans: [
-          {
-            spanId: randomBytes(8).toString('hex'),
-            kind: 'eval.case',
-            attributes: {
-              caseHash: shortHash(input.caseKey),
-              status: result.status,
-              agentVersion: run.agentVersion,
-              evaluatorVersion: EVALUATOR_VERSION,
-            },
-          },
-          {
-            spanId: randomBytes(8).toString('hex'),
-            kind: 'agent.invoke',
-            attributes: {
-              durationMs: Number(result.durationMs.toFixed(3)),
-              executionError: result.executionError,
-            },
-          },
-          {
-            spanId: randomBytes(8).toString('hex'),
-            kind: 'grader.evaluate',
-            attributes: { ruleCount: result.rules.length, failedRules },
-          },
-        ],
+      const caseHash = shortHash(input.caseKey);
+      const caseSpan = startChildSpan('eval.case', runSpan, {
+        'srl.case_hash': caseHash,
+        'srl.risk': input.risk,
       });
-      if (inserted) {
-        stored += 1;
+      try {
+        const goldenCase = rebuildGoldenCase(input, labels.get(input.caseId));
+        const prepared = prepareCase(goldenCase, `${run.id}:${input.caseKey}`);
+        const result = await executeCase(
+          prepared,
+          agent.adapter,
+          agent.adapterKind,
+          config.data,
+          caseSpan,
+        );
+        const failing = result.rules.filter(
+          (rule) => rule.verdict === 'fail' || rule.verdict === 'error',
+        );
+        const cost = costFields(result, agent.adapterKind);
+        caseSpan.setAttribute('srl.case_status', result.status);
+        if (result.status !== 'pass') caseSpan.setStatus({ code: SpanStatusCode.ERROR });
+
+        const persistSpan = startChildSpan('db.persist', caseSpan);
+        const inserted = await insertCaseResult(db, {
+          runId: run.id,
+          caseId: input.caseId,
+          status: result.status,
+          executionError: result.executionError,
+          output: result.output,
+          durationMs: result.durationMs,
+          ...cost,
+          traceId,
+          rules: result.rules,
+          traceSpans: [
+            {
+              spanId: spanIdOf(caseSpan),
+              kind: 'eval.case',
+              attributes: {
+                caseHash,
+                status: result.status,
+                agentVersion: run.agentVersion,
+                evaluatorVersion: EVALUATOR_VERSION,
+              },
+            },
+            {
+              spanId: randomHex(8),
+              kind: 'agent.invoke',
+              attributes: {
+                durationMs: Number(result.durationMs.toFixed(3)),
+                executionError: result.executionError,
+              },
+            },
+            {
+              spanId: randomHex(8),
+              kind: 'grader.evaluate',
+              attributes: {
+                ruleCount: result.rules.length,
+                failedRules: failing.map((rule) => rule.ruleId),
+              },
+            },
+          ],
+        });
+        persistSpan.setAttribute('srl.inserted', inserted);
+        persistSpan.end();
+        if (inserted) {
+          stored += 1;
+          recordCaseResult({
+            status: result.status,
+            risk: input.risk,
+            durationMs: result.durationMs,
+            failedRules: failing,
+            costUsd: cost.costUsd,
+            costKnown: cost.costSource !== 'unavailable',
+          });
+        }
+      } finally {
+        caseSpan.end();
       }
       if (!(await renewLease(db, job.jobId, workerId, leaseMs))) {
         leaseLost = true;

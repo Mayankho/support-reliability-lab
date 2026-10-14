@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { DbHandle } from '@srl/db';
+import { REDACT_PATHS, SpanStatusCode, startChildSpan, type Span } from '@srl/telemetry';
 import type { AppConfig } from './config.ts';
 import { localWorkspace, registerWorkspaceContext, type WorkspaceResolver } from './context.ts';
 import { registerErrorHandling } from './errors.ts';
@@ -12,12 +13,6 @@ import { registerMetricsRoutes } from './routes/metrics.ts';
 import { registerRunRoutes } from './routes/runs.ts';
 
 export const LOCAL_BIND_HOST = '127.0.0.1';
-
-const REDACT_PATHS = [
-  'req.headers.authorization',
-  'req.headers.cookie',
-  'req.headers["x-api-key"]',
-] as const;
 
 const CORRELATION_ID = /^[A-Za-z0-9._:-]{1,64}$/u;
 
@@ -44,8 +39,30 @@ export function buildApp(config: AppConfig, options: BuildAppOptions = {}): Fast
   });
 
   app.removeContentTypeParser('text/plain');
-  app.addHook('onSend', async (request, reply) => {
+  const spans = new WeakMap<object, Span>();
+  app.addHook('onRequest', (request, _reply, done) => {
+    spans.set(
+      request,
+      startChildSpan('http.request', null, {
+        'http.method': request.method,
+        'srl.correlation_id': request.id,
+      }),
+    );
+    done();
+  });
+  app.addHook('onSend', (request, reply, payload, done) => {
     void reply.header('x-correlation-id', request.id);
+    done(null, payload);
+  });
+  app.addHook('onResponse', (request, reply, done) => {
+    const span = spans.get(request);
+    if (span !== undefined) {
+      span.setAttribute('http.route', request.routeOptions.url ?? 'unmatched');
+      span.setAttribute('http.status_code', reply.statusCode);
+      if (reply.statusCode >= 500) span.setStatus({ code: SpanStatusCode.ERROR });
+      span.end();
+    }
+    done();
   });
 
   registerErrorHandling(app);

@@ -126,3 +126,29 @@ Workspace scoping goes through one request hook. In local mode it resolves every
 Compare refuses to report a delta for runs on different datasets, policies, or evaluator versions (`409 INCOMPATIBLE_RUNS`) and requires both runs to be completed.
 
 The server binds to `127.0.0.1`. Unauthenticated local mode is not safe to expose on a network, and the docs say so.
+
+## ADR-015: CI proves the gate on every push; the red build is a separate, manual workflow
+
+The main workflow has two jobs. `check` runs lint, format, typecheck, unit tests, and dataset validation. `integration` starts Postgres 16, then migrates, seeds, and runs every integration suite, followed by:
+
+1. `pnpm eval:run -- --agent reference-v1`, which exits 1 on BLOCK or ERROR, so a regression in the reference agent or the evaluator turns main red;
+2. `pnpm demo`, which exits 0 only when it observes PASS, BLOCK, PASS, so main CI also fails if the gate ever stops catching the intentional regression;
+3. `pnpm alerts:check`, which fails while any alert is open;
+4. `pnpm scan:sensitive` over tracked files and the artifacts just generated;
+5. uploading `artifacts/` (gates, reports, incident report) whether or not earlier steps passed.
+
+The intentionally failing build lives in `regression-demo.yml`, triggered manually. It gates `regression-demo-v1` against a fresh reference baseline and is expected to end red with the BLOCK evidence uploaded. Main CI stays green without hiding anything, because the demo step already asserts that same block.
+
+The full sequence was rehearsed locally on a fresh database before committing: the main-path commands all exited 0, and the regression workflow's gate step exited 1.
+
+## ADR-016: Telemetry is OpenTelemetry for traces and counters, Pino for logs, and alerts come from recorded gates
+
+`@srl/telemetry` wires the OpenTelemetry API and SDK (traces and metrics 2.12.0) and Pino 10. Telemetry is off unless enabled: with the `none` exporter nothing is registered and the API is a no-op, so tests and the demo pay nothing. The API honors `OTEL_EXPORTER=console`, and so does the worker. The demo and `eval:run` keep the console quiet.
+
+- **Traces** follow the spec's chain within a worker attempt: `eval.run`, then per case `eval.case`, `agent.invoke`, `grader.evaluate`, `db.persist`, and finally `gate.compute`. When tracing is on, the trace ID stored on each case result is the OpenTelemetry trace ID, so a case in the API or a report links to its spans. Span attributes carry IDs, a hashed case key, statuses, codes, and durations. A test asserts that no customer text appears. API requests get an `http.request` span carrying the route and status.
+- **Metrics** are the spec's counters and histogram: `eval_runs_total`, `eval_case_results_total`, `eval_rule_failures_total`, `eval_duration_ms`, `eval_gate_blocked_total`, `eval_worker_lease_recovery_total`, and `eval_dataset_integrity_errors_total`. Every label comes from a closed set (run status, case status, risk, rule ID, blocker category); anything else is bucketed as `other`. No run IDs are used as labels. `agent_estimated_cost_usd` records only reported usage, never an invented zero.
+- **Logs**: the worker logs structured JSON. The shared redaction list censors authorization headers, cookies, tokens, passwords, connection strings, message bodies, and customer replies.
+
+Alerts are evaluated from recorded gates (`pnpm alerts:check`) against rules in `packages/telemetry/src/alerts.ts`: `CRITICAL_RULE_FAILURE`, `RUN_ERROR_SPIKE`, `EVAL_STALE_OR_MISSING`, and `LATENCY_REGRESSION`. Runs that have a baseline form one candidate track, so a blocked candidate followed by a passing one reads as firing then resolved. The firing event links to the first failing case, rule, and trace ID. The command writes a Markdown incident report and exits 1 while any alert is open. Nothing is sent to Slack, email, or a webhook.
+
+`pnpm scan:sensitive` scans tracked files and generated artifacts for private keys, common token formats, non-example email addresses, phone numbers, Luhn-valid card numbers, and connection strings with non-local passwords. It reports file, line, and kind, never the value. Four test files intentionally contain fake connection passwords to prove redaction; each is listed with the exact kind allowed, so any other finding in those files still fails.

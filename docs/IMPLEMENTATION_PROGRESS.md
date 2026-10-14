@@ -4,10 +4,18 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** 07, validated HTTP API.
-- **Next action:** milestone 08. CI job that runs the reference evaluation and fails on BLOCK or ERROR, a manual regression-demo workflow, Pino redaction and correlation in the worker, basic OpenTelemetry spans and counters, and a scripted alert linked to failure and recovery.
+- **Last completed milestone:** 08, CI and telemetry.
+- **Next action:** milestone 09. JWT verification with `jose` against a local test issuer (signature, issuer, audience, expiry, algorithm), workspace scoping from claims with cross-tenant and malformed-token tests, reviewer-only expected values in case detail, then the four React views with a Playwright failure-drilldown test.
 
 ## Log
+
+### Milestone 08: CI and telemetry
+
+- Main CI now gates `reference-v1`, runs `pnpm demo` and `pnpm alerts:check`, scans tracked files and artifacts, and uploads `artifacts/`. A manual `regression-demo.yml` workflow produces the intentionally red BLOCK build.
+- Added `@srl/telemetry`: Pino logger with shared redaction, OpenTelemetry tracing and metrics (off by default), bounded-label counters, and source-controlled alert rules. The worker emits `eval.run`, `eval.case`, `agent.invoke`, `grader.evaluate`, `db.persist`, and `gate.compute` spans, stores the run's trace ID on each case result, and logs structured JSON.
+- Added `pnpm alerts:check` (fires on the blocked regression with case and trace evidence, resolves on the repair, writes an incident report) and `pnpm scan:sensitive` (0 findings across 190 tracked and generated files).
+- Rehearsed the CI sequence locally on a fresh database: migrate, seed, reference gate (PASS), demo, alerts (0 open), and scan all exited 0; the regression workflow's gate exited 1 as intended.
+- Tests: 7 telemetry unit tests (redaction, no-op mode, parent and child spans, bounded labels, alert firing and resolution, staleness, error spike, latency), a tracing integration test (one trace per run with 80 spans of each kind, no customer text), an alert integration test over the demo timeline, scanner unit tests, and a plain-Node load test for the API.
 
 ### Milestone 07: validated HTTP API
 

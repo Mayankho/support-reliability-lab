@@ -91,3 +91,24 @@ jobs:
 
       - name: Integration tests
         run: pnpm test:integration
+
+      - name: Release gate for reference-v1 (fails the job on BLOCK or ERROR)
+        run: pnpm eval:run -- --agent reference-v1 --out artifacts/ci/reference-v1
+
+      - name: Demo (fails unless it observes PASS, BLOCK, PASS)
+        run: pnpm demo
+
+      - name: Alert check (fails while any alert is open)
+        run: pnpm alerts:check
+
+      - name: Scan tracked files and generated artifacts for sensitive values
+        run: pnpm scan:sensitive
+
+      - name: Upload evaluation artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: evaluation-artifacts
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14

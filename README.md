@@ -20,7 +20,8 @@ I built it around the problems a support systems engineering role deals with eve
 | Postgres evidence store and leased worker with idempotent results          | Done    |
 | Fail-closed release gate, baseline comparison, JSON and HTML reports, demo | Done    |
 | Validated HTTP API with workspace-scoped reads and a background worker     | Done    |
-| CI evaluation gate and telemetry, review UI with JWT auth                  | Planned |
+| CI release gate, OpenTelemetry traces and counters, alerts, secret scan    | Done    |
+| Review UI with JWT-scoped access                                           | Planned |
 
 The full plan, with acceptance criteria for each milestone, is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -95,6 +96,16 @@ curl -s http://127.0.0.1:3000/api/v1/evaluation-runs/<runId>/cases/REF-001 # cas
 
 Endpoints and error codes are documented in [`contracts/openapi.yaml`](contracts/openapi.yaml).
 
+### Monitoring and CI
+
+```bash
+pnpm alerts:check       # evaluates alert rules over recorded gates, writes artifacts/incidents/*.md
+pnpm scan:sensitive     # keys, tokens, contact details, card numbers in tracked files and artifacts
+OTEL_EXPORTER=console pnpm worker   # print OpenTelemetry spans for each run
+```
+
+Main CI gates `reference-v1` and runs the demo on every push, so it fails if the reference agent regresses or if the gate stops catching the intentional regression. The deliberately red build is a separate, manually triggered workflow (`.github/workflows/regression-demo.yml`) that uploads the BLOCK evidence.
+
 ## Repository layout
 
 ```text
@@ -106,6 +117,7 @@ packages/agent/        reference-v1, regression-demo-v1, repaired-v1
 packages/evals/        Graders for the twelve rule IDs (cannot import the agent)
 packages/runner/       Enqueues runs; leased worker executes, grades, and persists each case
 packages/db/           Drizzle schema, migrations, immutability triggers, SQL queries
+packages/telemetry/    Pino redaction, OpenTelemetry spans and counters, alert rules
 fixtures/              Synthetic policy, 80 golden cases, manifest, label review
 contracts/             JSON Schema and starter OpenAPI contract
 docs/                  Spec, roadmap, and design decisions

@@ -1,0 +1,69 @@
+name: Regression demo (expected to fail)
+
+# Manually triggered. Gates regression-demo-v1 against a fresh reference-v1 baseline. The gate step is
+# expected to fail with BLOCK; that red job is the evidence. Main CI stays green because it runs the
+# full demo, which succeeds only when this regression is blocked.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate-regression:
+    name: Gate regression-demo-v1 (expected BLOCK)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: support_reliability
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d support_reliability"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://app:app@localhost:5432/support_reliability
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare database
+        run: pnpm db:migrate && pnpm seed
+
+      - name: Baseline gate for reference-v1
+        run: pnpm eval:run -- --agent reference-v1 --out artifacts/ci/reference-v1
+
+      - name: Candidate gate for regression-demo-v1 (expected to fail)
+        run: >-
+          pnpm eval:run -- --agent regression-demo-v1
+          --baseline-report artifacts/ci/reference-v1/run-report.json
+          --out artifacts/ci/regression-demo-v1
+
+      - name: Upload gate evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: regression-demo-evidence
+          path: artifacts/ci/
+          if-no-files-found: warn
+          retention-days: 30

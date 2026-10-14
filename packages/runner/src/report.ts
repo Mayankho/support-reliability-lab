@@ -24,6 +24,7 @@ import {
   type RunReport,
   type WrittenArtifacts,
 } from '@srl/evals';
+import { recordGateOutcome, startChildSpan } from '@srl/telemetry';
 import { z } from 'zod';
 import { loadVerifiedDataset } from './service.ts';
 import { runConfigSchema } from './worker.ts';
@@ -122,6 +123,10 @@ export async function evaluateAndGate(
   baseline?: unknown,
   now = new Date(),
 ): Promise<GateOutcome> {
+  const span = startChildSpan('gate.compute', null, {
+    'srl.run_id': runId,
+    'srl.has_baseline': baseline !== undefined,
+  });
   const report = await buildReportFromDb(db, runId);
   const fixture = await loadVerifiedDataset(report.dataset.version);
   const result = computeGate({
@@ -130,6 +135,10 @@ export async function evaluateAndGate(
     expectedDataset: { version: fixture.version, sha256: fixture.sha256 },
     now,
   });
+  span.setAttribute('srl.gate_status', result.status);
+  span.setAttribute('srl.blocker_count', result.errors.length + result.blockers.length);
+  span.end();
+  recordGateOutcome(result.status, [...result.errors, ...result.blockers]);
   if (result.artifact === null) {
     throw new Error(`gate could not evaluate run ${runId}: ${result.errors.join(', ')}`);
   }

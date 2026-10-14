@@ -9,6 +9,12 @@ export {
   type PreparedCase,
   type RunConfig,
 } from './execute.ts';
+export {
+  loadGatedRunTimeline,
+  openAlerts,
+  renderIncidentReport,
+  writeIncidentReport,
+} from './alerts.ts';
 export { runDemo, type DemoResult, type DemoStep } from './demo.ts';
 export {
   buildReportFromDb,

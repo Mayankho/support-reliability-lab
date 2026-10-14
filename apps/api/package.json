@@ -16,6 +16,7 @@
     "@srl/db": "workspace:*",
     "@srl/evals": "workspace:*",
     "@srl/runner": "workspace:*",
+    "@srl/telemetry": "workspace:*",
     "fastify": "5.12.5",
     "zod": "4.6.7"
   },

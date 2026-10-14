@@ -20,7 +20,9 @@
     "eval:run": "node packages/runner/src/cli/eval-run.ts",
     "eval:gate": "node packages/runner/src/cli/eval-gate.ts",
     "demo": "node packages/runner/src/cli/demo.ts",
-    "worker": "node packages/runner/src/cli/worker.ts"
+    "worker": "node packages/runner/src/cli/worker.ts",
+    "alerts:check": "node packages/runner/src/cli/alerts-check.ts",
+    "scan:sensitive": "node packages/dataset/src/cli/scan-sensitive.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

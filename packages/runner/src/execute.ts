@@ -9,8 +9,9 @@ import {
   type AgentOutput,
   type RuleResult,
 } from '@srl/contracts';
-import { gradeCase, type SuppliedDoc } from '@srl/evals';
+import { EVALUATOR_VERSION, gradeCase, type SuppliedDoc } from '@srl/evals';
 import { selectPolicyDocuments } from '@srl/policies';
+import { SpanStatusCode, startChildSpan, type Span } from '@srl/telemetry';
 
 export interface RunConfig {
   caseTimeoutMs: number;
@@ -92,9 +93,21 @@ export async function executeCase(
   adapter: AgentAdapter,
   adapterKind: AdapterKind,
   config: RunConfig,
+  parentSpan: Span | null = null,
 ): Promise<CaseResult> {
   const { goldenCase } = prepared;
+  const agentSpan = startChildSpan('agent.invoke', parentSpan, { 'srl.adapter_kind': adapterKind });
   const invocation = await invokeAdapter(adapter, prepared.agentInput, config.caseTimeoutMs);
+  agentSpan.setAttribute('srl.duration_ms', Number(invocation.durationMs.toFixed(3)));
+  if (invocation.executionError !== null) {
+    agentSpan.setAttribute('srl.error_class', invocation.executionError);
+    agentSpan.setStatus({ code: SpanStatusCode.ERROR });
+  }
+  agentSpan.end();
+
+  const graderSpan = startChildSpan('grader.evaluate', parentSpan, {
+    'srl.evaluator_version': EVALUATOR_VERSION,
+  });
   const grade = await gradeCase(
     {
       caseId: goldenCase.id,
@@ -111,6 +124,9 @@ export async function executeCase(
     },
     { graderTimeoutMs: config.graderTimeoutMs },
   );
+  graderSpan.setAttribute('srl.case_status', grade.status);
+  if (grade.status === 'error') graderSpan.setStatus({ code: SpanStatusCode.ERROR });
+  graderSpan.end();
   return {
     caseId: goldenCase.id,
     category: goldenCase.category,
