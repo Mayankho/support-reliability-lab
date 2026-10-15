@@ -57,7 +57,7 @@ A run directory (`artifacts/runs/<runId>/` or `artifacts/demo/<version>/`) holds
 - `run-report.json`: per-case results and rule verdicts, validated against a schema before gating.
 - `run-report.html`: the same report for reading, with customer text escaped.
 
-`artifacts/` is git-ignored. CI uploads it on every run. A sample from a clean run is committed under [`docs/demo/`](demo/).
+`artifacts/` is git-ignored. CI uploads it only after `pnpm scan:sensitive` completes successfully. A sample from a clean run is committed under [`docs/demo/`](demo/).
 
 ## Troubleshooting
 
@@ -72,7 +72,7 @@ POSTGRES_PORT=5433 docker compose up -d db
 
 **`/health/ready` returns 503 with `"status": "not_ready"`.** The `checks` field says which part failed: `database` is `not_configured` or `unavailable` (check `DATABASE_URL` and `docker compose ps`), or `dataset` is `invalid` (run `pnpm eval:validate-data`).
 
-**A run's gate is `ERROR`.** The evidence is incomplete or not comparable, which is different from a failing release. The reasons are listed first in `blockers`, prefixed `error:` (for example `error:missing_results:79/80` or `error:missing_rule:<rule>:<case>`), `integrity:` (the report's dataset differs from the fixture), or `incompatible_baseline:` (the baseline used a different dataset, policy, or evaluator, or is incomplete). Fix the cause and run again. An `ERROR` is never downgraded to `PASS`.
+**A run's gate is `ERROR`.** The evidence is incomplete or not comparable, which is different from a failing release. The reasons are listed first in `blockers`, prefixed `error:` (for example `error:missing_results:79/80`, `error:missing_rule:<rule>:<case>`, or `error:not_applicable:<rule>:<case>`), `integrity:` (the report's dataset hash, case ids, case count, or scoring labels differ from the fixture), or `incompatible_baseline:` (the baseline used a different dataset, policy, or evaluator, or is incomplete). Fix the cause and run again. An `ERROR` is never downgraded to `PASS`.
 
 **A run ends `errored` with `agent_source_changed`.** The agent source changed between enqueue and execution, so the worker refused to run code other than what the run recorded. Enqueue a new run; enqueueing registers the current source hash.
 

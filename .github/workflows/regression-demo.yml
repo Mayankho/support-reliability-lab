@@ -59,11 +59,32 @@ jobs:
           --baseline-report artifacts/ci/reference-v1/run-report.json
           --out artifacts/ci/regression-demo-v1
 
+      - name: Scan tracked files and generated artifacts for sensitive values
+        id: sensitive-scan
+        if: always() && !cancelled()
+        run: pnpm scan:sensitive > "$RUNNER_TEMP/sensitive-scan.txt"
+
+      - name: Show sensitive-scan summary
+        if: always() && !cancelled()
+        run: |
+          if [ -f "$RUNNER_TEMP/sensitive-scan.txt" ]; then
+            cat "$RUNNER_TEMP/sensitive-scan.txt"
+          fi
+
       - name: Upload gate evidence
-        if: always()
+        if: steps.sensitive-scan.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: regression-demo-evidence
           path: artifacts/ci/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload scrubbed scan summary
+        if: always() && !cancelled() && steps.sensitive-scan.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: regression-sensitive-scan-summary
+          path: ${{ runner.temp }}/sensitive-scan.txt
+          if-no-files-found: ignore
+          retention-days: 14

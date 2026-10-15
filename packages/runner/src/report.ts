@@ -27,6 +27,7 @@ import {
 import { recordGateOutcome, startChildSpan } from '@srl/telemetry';
 import { z } from 'zod';
 import { loadVerifiedDataset } from './service.ts';
+import { trustedCasesForGate } from './trusted-cases.ts';
 import { runConfigSchema } from './worker.ts';
 
 const caseInputSchema = z.object({ message: z.string(), account: accountContextSchema }).strict();
@@ -132,7 +133,11 @@ export async function evaluateAndGate(
   const result = computeGate({
     candidate: report,
     ...(baseline === undefined ? {} : { baseline }),
-    expectedDataset: { version: fixture.version, sha256: fixture.sha256 },
+    expectedDataset: {
+      version: fixture.version,
+      sha256: fixture.sha256,
+      cases: trustedCasesForGate(fixture.cases),
+    },
     now,
   });
   span.setAttribute('srl.gate_status', result.status);

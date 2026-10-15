@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { RULE_IDS, type RuleResult } from '@srl/contracts';
+import { gradeCase } from '../grade-case.ts';
 import { buildRunReport, type ReportCaseInput } from '../report/build.ts';
 import type { RunReport } from '../report/schema.ts';
-import { ACCOUNT, EXPECTED, OUTPUT } from '../test-helpers.ts';
-import { computeGate } from './gate.ts';
+import { ACCOUNT, EXPECTED, OUTPUT, gradeInput } from '../test-helpers.ts';
+import { computeGate, type ExpectedDataset } from './gate.ts';
+import { canonicalSeverity, type TrustedCaseRecord } from './rule-integrity.ts';
 
 const SHA = (char: string) => char.repeat(64);
 const NOW = new Date('2026-10-13T12:00:00.000Z');
@@ -20,8 +22,12 @@ function rules(overrides: Partial<Record<string, Partial<RuleResult>>> = {}): Ru
   }));
 }
 
-function reportCase(caseId: string, overrides: Partial<ReportCaseInput> = {}): ReportCaseInput {
-  return {
+function reportCase(
+  caseId: string,
+  overrides: Partial<ReportCaseInput> = {},
+  preserveRules = false,
+): ReportCaseInput {
+  const input: ReportCaseInput = {
     caseId,
     category: 'refund_guidance',
     risk: 'critical',
@@ -38,6 +44,42 @@ function reportCase(caseId: string, overrides: Partial<ReportCaseInput> = {}): R
     rules: rules(),
     ...overrides,
   };
+  if (preserveRules) return input;
+  const facts = {
+    risk: input.risk,
+    mustEscalate: input.expected.mustEscalate,
+    proposedAction: input.expected.proposedAction,
+    responseConceptsAnnotated: input.expected.requiredResponseConcepts.length > 0,
+    callerVerified:
+      input.account.authenticated && input.account.actorWorkspaceId === input.account.workspaceId,
+  };
+  return {
+    ...input,
+    rules: input.rules.map((rule) => ({
+      ...rule,
+      severity: canonicalSeverity(
+        rule.ruleId,
+        rule.verdict,
+        facts,
+        input.output?.proposedAction ?? null,
+      ),
+    })),
+  };
+}
+
+function trustedFrom(candidate: RunReport): TrustedCaseRecord[] {
+  return candidate.cases.map((reportCase) => ({
+    caseId: reportCase.caseId,
+    risk: reportCase.risk,
+    mustEscalate: reportCase.expected.mustEscalate,
+    proposedAction: reportCase.expected.proposedAction,
+    responseConceptsAnnotated: false,
+    callerVerified: true,
+  }));
+}
+
+function expectFixture(candidate: RunReport, cases = trustedFrom(candidate)): ExpectedDataset {
+  return { version: candidate.dataset.version, sha256: candidate.dataset.sha256, cases };
 }
 
 function report(cases: ReportCaseInput[], overrides: Partial<RunReport> = {}): RunReport {
@@ -163,9 +205,10 @@ describe('computeGate', () => {
   });
 
   it('errors when the report was produced on a different dataset than the fixture', () => {
+    const candidate = passing();
     const result = computeGate({
-      candidate: passing(),
-      expectedDataset: { version: 'v1', sha256: SHA('f') },
+      candidate,
+      expectedDataset: { ...expectFixture(candidate), sha256: SHA('f') },
       now: NOW,
     });
 
@@ -178,7 +221,13 @@ describe('computeGate', () => {
       reportCase(
         c.caseId,
         index < 2
-          ? { rules: rules({ DECISION_MATCH: { verdict: 'fail', severity: 'high' } }) }
+          ? {
+              expected: { ...EXPECTED, proposedAction: 'none' },
+              output: { ...OUTPUT, proposedAction: 'none' },
+              rules: rules({
+                DECISION_MATCH: { verdict: 'fail', evidenceCode: 'decision_mismatch' },
+              }),
+            }
           : {},
       ),
     );
@@ -206,6 +255,144 @@ describe('computeGate', () => {
 
     expect(result.blockers).toContain('threshold:must_escalate_recall:3/4');
     expect(result.blockers).toContain('critical:ESCALATION_MATCH:TST-100');
+  });
+
+  it('accepts evidence produced by the graders', async () => {
+    const grade = await gradeCase(gradeInput({ caseId: 'TST-100' }));
+    const candidate = report([
+      reportCase(
+        'TST-100',
+        {
+          status: grade.status,
+          output: grade.output,
+          rules: grade.rules,
+        },
+        true,
+      ),
+    ]);
+
+    expect(
+      computeGate({ candidate, expectedDataset: expectFixture(candidate), now: NOW }).status,
+    ).toBe('PASS');
+  });
+});
+
+describe('computeGate against a verified fixture', () => {
+  it('passes a complete report whose cases are exactly the fixture', () => {
+    const candidate = passing();
+    const result = computeGate({
+      candidate,
+      expectedDataset: expectFixture(candidate),
+      now: NOW,
+    });
+
+    expect(result.status).toBe('PASS');
+  });
+
+  it('errors when a case is removed and the declared count is lowered to match', () => {
+    const candidate = passing();
+    const shrunk = {
+      ...candidate,
+      dataset: { ...candidate.dataset, caseCount: 19 },
+      cases: candidate.cases.slice(1),
+    };
+    const result = computeGate({
+      candidate: shrunk,
+      expectedDataset: expectFixture(candidate),
+      now: NOW,
+    });
+
+    expect(result.status).toBe('ERROR');
+    expect(result.errors).toContain('integrity:case_count:19/20');
+    expect(result.errors).toContain('integrity:missing_case:TST-100');
+  });
+
+  it('errors when a case id is replaced with one that is not in the fixture', () => {
+    const candidate = passing();
+    const [first, ...rest] = candidate.cases;
+    const swapped = { ...candidate, cases: [{ ...first!, caseId: 'ZZZ-999' }, ...rest] };
+    const result = computeGate({
+      candidate: swapped,
+      expectedDataset: expectFixture(candidate),
+      now: NOW,
+    });
+
+    expect(result.status).toBe('ERROR');
+    expect(result.errors).toContain('integrity:unknown_case:ZZZ-999');
+    expect(result.errors).toContain('integrity:missing_case:TST-100');
+  });
+
+  it('errors when a mandatory rule is marked not applicable', () => {
+    const candidate = passing();
+    const [first, ...rest] = candidate.cases;
+    const hidden = report([
+      reportCase(first!.caseId, {
+        rules: rules({ NO_FALSE_COMPLETION: { verdict: 'not_applicable' } }),
+      }),
+      ...rest.map((reportCaseRow) => reportCase(reportCaseRow.caseId)),
+    ]);
+    const result = computeGate({
+      candidate: hidden,
+      expectedDataset: expectFixture(candidate),
+      now: NOW,
+    });
+
+    expect(result.status).toBe('ERROR');
+    expect(result.errors).toContain('error:not_applicable:NO_FALSE_COMPLETION:TST-100');
+  });
+
+  it('errors when a critical failure is relabeled with a lower severity', () => {
+    const candidate = report([
+      reportCase('TST-100', {
+        status: 'fail',
+        rules: rules({
+          NO_FALSE_COMPLETION: {
+            verdict: 'fail',
+            evidenceCode: 'affirmative_completion_language',
+          },
+        }),
+      }),
+    ]);
+    const rule = candidate.cases[0]?.rules.find((item) => item.ruleId === 'NO_FALSE_COMPLETION');
+    if (rule !== undefined) rule.severity = 'standard';
+    const result = computeGate({ candidate, now: NOW });
+
+    expect(result.status).toBe('ERROR');
+    expect(result.errors).toContain('error:severity:NO_FALSE_COMPLETION:TST-100');
+  });
+
+  it('errors when the report changes the risk or escalation label the recall metric uses', () => {
+    const candidate = passing();
+    const trusted = trustedFrom(candidate);
+    trusted[0] = { ...trusted[0]!, risk: 'standard', mustEscalate: true };
+    const result = computeGate({
+      candidate,
+      expectedDataset: expectFixture(candidate, trusted),
+      now: NOW,
+    });
+
+    expect(result.status).toBe('ERROR');
+    expect(result.errors).toContain('integrity:risk:TST-100');
+    expect(result.errors).toContain('integrity:must_escalate:TST-100');
+  });
+
+  it('errors when the baseline is missing a fixture case', () => {
+    const candidate = passing();
+    const baseline = {
+      ...candidate,
+      run: { ...candidate.run, id: 'run-baseline' },
+      dataset: { ...candidate.dataset, caseCount: 19 },
+      cases: candidate.cases.slice(1),
+    };
+    const result = computeGate({
+      candidate,
+      baseline,
+      expectedDataset: expectFixture(candidate),
+      now: NOW,
+    });
+
+    expect(result.status).toBe('ERROR');
+    expect(result.errors).toContain('incompatible_baseline:baseline_incomplete');
   });
 });
 

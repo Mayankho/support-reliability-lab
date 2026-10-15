@@ -2,14 +2,22 @@ import { RULE_IDS, type GateStatus } from '@srl/contracts';
 import { computeMetrics, type Ratio } from '../report/metrics.ts';
 import { runReportSchema, type GateArtifact, type RunReport } from '../report/schema.ts';
 import { compareRuns, type RunComparison } from './compare.ts';
+import { caseEvidenceErrors, type TrustedCaseRecord } from './rule-integrity.ts';
 import { GATE_THRESHOLDS, GATE_VERSION, type GateThresholds } from './thresholds.ts';
+
+export interface ExpectedDataset {
+  version: string;
+  sha256: string;
+  /** Exact case membership and the labels the gate scores, loaded from the verified fixture. */
+  cases: readonly TrustedCaseRecord[];
+}
 
 export interface GateInput {
   /** Raw report, validated here. A report that fails validation can only produce ERROR. */
   candidate: unknown;
   baseline?: unknown;
   /** The dataset the gate expects, from the current fixture manifest. */
-  expectedDataset?: { version: string; sha256: string };
+  expectedDataset?: ExpectedDataset;
   thresholds?: GateThresholds;
   now?: Date;
 }
@@ -25,7 +33,10 @@ export interface GateResult {
 
 const pct = (ratio: Ratio) => `${String(ratio.numerator)}/${String(ratio.denominator)}`;
 
-function integrityErrors(report: RunReport): string[] {
+function integrityErrors(
+  report: RunReport,
+  trusted: readonly TrustedCaseRecord[] | undefined,
+): string[] {
   const errors: string[] = [];
   if (report.run.status !== 'completed') {
     errors.push(`error:run_status:${report.run.status}`);
@@ -35,10 +46,27 @@ function integrityErrors(report: RunReport): string[] {
       `error:missing_results:${String(report.cases.length)}/${String(report.dataset.caseCount)}`,
     );
   }
+
+  const trustedById = new Map<string, TrustedCaseRecord>();
+  if (trusted !== undefined) {
+    for (const record of trusted) {
+      if (trustedById.has(record.caseId))
+        errors.push(`integrity:duplicate_trusted_case:${record.caseId}`);
+      trustedById.set(record.caseId, record);
+    }
+    if (report.cases.length !== trusted.length || report.dataset.caseCount !== trusted.length) {
+      errors.push(`integrity:case_count:${String(report.cases.length)}/${String(trusted.length)}`);
+    }
+  }
+
   const seen = new Set<string>();
   for (const reportCase of report.cases) {
     if (seen.has(reportCase.caseId)) errors.push(`error:duplicate_case:${reportCase.caseId}`);
     seen.add(reportCase.caseId);
+    const record = trustedById.get(reportCase.caseId);
+    if (trusted !== undefined && record === undefined) {
+      errors.push(`integrity:unknown_case:${reportCase.caseId}`);
+    }
     const ruleIds = new Set(reportCase.rules.map((rule) => rule.ruleId));
     for (const ruleId of RULE_IDS) {
       if (!ruleIds.has(ruleId)) errors.push(`error:missing_rule:${ruleId}:${reportCase.caseId}`);
@@ -49,6 +77,12 @@ function integrityErrors(report: RunReport): string[] {
     for (const rule of reportCase.rules) {
       if (rule.verdict === 'error')
         errors.push(`error:${rule.evidenceCode}:${rule.ruleId}:${reportCase.caseId}`);
+    }
+    errors.push(...caseEvidenceErrors(reportCase, record));
+  }
+  if (trusted !== undefined) {
+    for (const caseId of trustedById.keys()) {
+      if (!seen.has(caseId)) errors.push(`integrity:missing_case:${caseId}`);
     }
   }
   return errors;
@@ -74,7 +108,8 @@ export function computeGate(input: GateInput): GateResult {
     };
   }
   const candidate = parsed.data;
-  const errors = integrityErrors(candidate);
+  const trusted = input.expectedDataset?.cases;
+  const errors = integrityErrors(candidate, trusted);
   const blockers: string[] = [];
   const warnings: string[] = [];
 
@@ -114,7 +149,7 @@ export function computeGate(input: GateInput): GateResult {
       errors.push('incompatible_baseline:report_invalid');
     } else {
       const baseline = baselineParsed.data;
-      if (integrityErrors(baseline).length > 0) {
+      if (integrityErrors(baseline, trusted).length > 0) {
         errors.push('incompatible_baseline:baseline_incomplete');
       }
       comparison = compareRuns(candidate, baseline, thresholds);

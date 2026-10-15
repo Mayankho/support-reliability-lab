@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util';
 import { computeGate } from '@srl/evals';
 import { readReportFile } from '../report.ts';
 import { loadVerifiedDataset } from '../service.ts';
+import { trustedCasesForGate } from '../trusted-cases.ts';
 import { cliArgs } from './common.ts';
 
 const USAGE =
@@ -42,7 +43,11 @@ async function main(): Promise<number> {
     const result = computeGate({
       candidate,
       ...(baseline === undefined ? {} : { baseline }),
-      expectedDataset: { version: fixture.version, sha256: fixture.sha256 },
+      expectedDataset: {
+        version: fixture.version,
+        sha256: fixture.sha256,
+        cases: trustedCasesForGate(fixture.cases),
+      },
     });
     process.stdout.write(`gate ${result.status}\n`);
     for (const blocker of [...result.errors, ...result.blockers]) {

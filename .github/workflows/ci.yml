@@ -110,15 +110,33 @@ jobs:
         run: pnpm tickets:demo
 
       - name: Scan tracked files and generated artifacts for sensitive values
-        run: pnpm scan:sensitive
+        id: sensitive-scan
+        if: always() && !cancelled()
+        run: pnpm scan:sensitive > "$RUNNER_TEMP/sensitive-scan.txt"
+
+      - name: Show sensitive-scan summary
+        if: always() && !cancelled()
+        run: |
+          if [ -f "$RUNNER_TEMP/sensitive-scan.txt" ]; then
+            cat "$RUNNER_TEMP/sensitive-scan.txt"
+          fi
 
       - name: Upload evaluation artifacts
-        if: always()
+        if: steps.sensitive-scan.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: evaluation-artifacts
           path: artifacts/
           if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload scrubbed scan summary
+        if: always() && !cancelled() && steps.sensitive-scan.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: sensitive-scan-summary
+          path: ${{ runner.temp }}/sensitive-scan.txt
+          if-no-files-found: ignore
           retention-days: 14
 
   e2e:
@@ -164,11 +182,32 @@ jobs:
       - name: Build UI, prepare data, run browser tests
         run: pnpm --filter @srl/web test:e2e
 
+      - name: Scan before publishing the browser report
+        id: sensitive-scan
+        if: always() && !cancelled()
+        run: pnpm scan:sensitive -- apps/web/playwright-report > "$RUNNER_TEMP/sensitive-scan.txt"
+
+      - name: Show sensitive-scan summary
+        if: always() && !cancelled()
+        run: |
+          if [ -f "$RUNNER_TEMP/sensitive-scan.txt" ]; then
+            cat "$RUNNER_TEMP/sensitive-scan.txt"
+          fi
+
       - name: Upload Playwright report
-        if: always()
+        if: steps.sensitive-scan.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: apps/web/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload scrubbed scan summary
+        if: always() && !cancelled() && steps.sensitive-scan.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-sensitive-scan-summary
+          path: ${{ runner.temp }}/sensitive-scan.txt
           if-no-files-found: ignore
           retention-days: 14

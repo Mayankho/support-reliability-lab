@@ -46,9 +46,14 @@ function artifactFiles(dir: string): string[] {
 }
 
 function main(): number {
-  const files = [...new Set([...trackedFiles(), ...artifactFiles(join(ROOT, 'artifacts'))])].filter(
-    (path) => !SKIP.some((pattern) => pattern.test(path)) && existsSync(join(ROOT, path)),
-  );
+  const extraDirs = process.argv.slice(2).filter((arg) => arg !== '--');
+  const files = [
+    ...new Set([
+      ...trackedFiles(),
+      ...artifactFiles(join(ROOT, 'artifacts')),
+      ...extraDirs.flatMap((dir) => artifactFiles(join(ROOT, dir))),
+    ]),
+  ].filter((path) => !SKIP.some((pattern) => pattern.test(path)) && existsSync(join(ROOT, path)));
   const findings = files
     .flatMap((path) => scanText(path, readFileSync(join(ROOT, path), 'utf8')))
     .filter(

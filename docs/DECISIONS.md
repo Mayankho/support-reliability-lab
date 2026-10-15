@@ -94,7 +94,7 @@ A plain-Node runtime test loads the runner's whole module graph with Node's type
 
 `computeGate` (`@srl/evals`) takes a run report as untrusted input and validates it with Zod first. A report that fails validation, including one with an unknown verdict, can only produce `ERROR`. The gate then recomputes every metric from case-level rule results; the report carries no precomputed numbers for it to trust.
 
-- **ERROR** means the evidence is incomplete or cannot be compared: the run did not complete, results or rule rows are missing or duplicated, any rule errored, the report's dataset hash differs from the current fixture, or the baseline is incomplete or incompatible (different dataset, policy, evaluator version, or case set). An incompatible baseline yields ERROR, never a delta.
+- **ERROR** means the evidence is incomplete or cannot be compared: the run did not complete, results or rule rows are missing or duplicated, any rule errored, a mandatory rule is marked not applicable, a rule severity or evaluator version is not the one that rule produces, case status disagrees with its rule results, the report's dataset hash differs from the current fixture, the report's case ids or scoring labels differ from that fixture, or the baseline is incomplete or incompatible (different dataset, policy, evaluator version, or case set). An incompatible baseline yields ERROR, never a delta. When a fixture is supplied, its case count and case ids are the membership that counts; the report's own `caseCount` is not. See ADR-023.
 - **BLOCK** means the evidence is complete and shows a problem: any critical rule failure; decision or route accuracy below 95%; must-escalate recall below 100% on critical cases; and, against a compatible baseline, any new critical failure, an accuracy drop of more than 2 percentage points, or a p95 latency more than 1.3x the baseline.
 - **PASS** requires complete evidence and none of the above.
 
@@ -135,7 +135,7 @@ The main workflow has two jobs. `check` runs lint, format, typecheck, unit tests
 2. `pnpm demo`, which exits 0 only when it observes PASS, BLOCK, PASS, so main CI also fails if the gate ever stops catching the intentional regression;
 3. `pnpm alerts:check`, which fails while any alert is open;
 4. `pnpm scan:sensitive` over tracked files and the artifacts just generated;
-5. uploading `artifacts/` (gates, reports, incident report) whether or not earlier steps passed.
+5. uploading `artifacts/` only after `pnpm scan:sensitive` has completed successfully (ADR-023). A failed or skipped scan does not publish that directory.
 
 The intentionally failing build lives in `regression-demo.yml`, triggered manually. It gates `regression-demo-v1` against a fresh reference baseline and is expected to end red with the BLOCK evidence uploaded. Main CI stays green without hiding anything, because the demo step already asserts that same block.
 
@@ -257,3 +257,18 @@ Its tests use invented records in a temporary directory. It has not been run on 
 `.gitignore` and the sensitive-data scanner reduce the chance of committing private data, but they are not guarantees. The real protection is that nothing private is ever placed inside the repository.
 
 **No new evaluation cases (T04).** The crosswalk proposes eight new cases for gaps the v1 suite does not exercise: an API 401 with a pasted key, rate limits, webhook retries, credits that never arrived, a pending hold versus a duplicate, a stuck job that is the central need, a deletion with a legal deadline, and a non-English ambiguous refund. None is authored yet. A new case needs expected behavior that someone other than its author has reviewed, in a separately versioned dataset that runs outside the v1 gate. Writing cases and labels alone would create the self-graded gold set the project avoids elsewhere. The proposals are in `docs/TAXONOMY_COVERAGE_CROSSWALK.md`, ready for that review.
+
+## ADR-023: A release gate trusts the fixture's case list, and CI publishes artifacts only after a successful scan
+
+`computeGate` used to treat a report as complete when `cases.length` equalled the report's own `dataset.caseCount` and the report's dataset hash matched the fixture. That accepts a report that drops a case and lowers the declared count, swaps in an unknown case id, marks `NO_FALSE_COMPLETION` as `not_applicable`, or downgrades a critical failure's severity. Those reports are now `ERROR`.
+
+When the caller supplies the verified fixture (`pnpm eval:gate` and the worker both do), the gate requires:
+
+- the same case count and the same case ids as the fixture, on the candidate and on any baseline;
+- the report's risk, must-escalate label, proposed action, and caller-verification flag to match that fixture case, because those fields decide recall and which severities are legal;
+- `not_applicable` only where the rule defines it: tenant isolation for a verified caller, escalation when escalation is not required, and response concepts when none are annotated;
+- each result's severity and evaluator version to be the one that rule produces, and the case status to agree with its rule results and with whether output is present.
+
+`RESPONSE_CONCEPTS` may stay `not_applicable` for the v1 suite, whose cases annotate no response concepts. The check does not re-grade the reply.
+
+CI uploads `artifacts/` and the Playwright report only when the sensitive-data scan step completed successfully. The scan still runs if an earlier step failed, including the expected BLOCK in the manual regression workflow, so a clean scan can still publish that evidence. If the scan fails, the job uploads only the scan's own summary, which is file, line, and kind, never the matched value. A skipped scan publishes nothing.

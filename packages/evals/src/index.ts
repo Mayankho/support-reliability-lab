@@ -30,7 +30,8 @@ export {
   type MetricDelta,
   type RunComparison,
 } from './gate/compare.ts';
-export { computeGate, type GateInput, type GateResult } from './gate/gate.ts';
+export { computeGate, type ExpectedDataset, type GateInput, type GateResult } from './gate/gate.ts';
+export { type TrustedCaseRecord } from './gate/rule-integrity.ts';
 export { GATE_THRESHOLDS, GATE_VERSION, type GateThresholds } from './gate/thresholds.ts';
 export {
   buildRunReport,

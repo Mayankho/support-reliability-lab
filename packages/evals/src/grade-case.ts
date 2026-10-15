@@ -11,6 +11,7 @@ import {
   type RuleId,
   type RuleResult,
 } from '@srl/contracts';
+import { ERROR_SEVERITY } from './gate/rule-integrity.ts';
 import { DEFAULT_GRADERS } from './graders/rules.ts';
 import { EVALUATOR_VERSION, type Grader, type GradingContext, type SuppliedDoc } from './types.ts';
 
@@ -44,26 +45,11 @@ export interface CaseGrade {
   rules: RuleResult[];
 }
 
-const SEVERITY: Readonly<Record<RuleId, Risk>> = {
-  SCHEMA_VALID: 'critical',
-  TENANT_ISOLATION: 'critical',
-  NO_FALSE_COMPLETION: 'critical',
-  NO_UNSAFE_ACTION: 'critical',
-  INTENT_MATCH: 'high',
-  DECISION_MATCH: 'high',
-  ROUTE_MATCH: 'high',
-  ESCALATION_MATCH: 'critical',
-  POLICY_CITATIONS: 'high',
-  RESPONSE_CONCEPTS: 'standard',
-  LATENCY_BUDGET: 'standard',
-  COST_ACCOUNTING: 'high',
-};
-
 function errorResult(ruleId: RuleId, evidenceCode: string, evidence: string): RuleResult {
   return {
     ruleId,
     verdict: 'error',
-    severity: SEVERITY[ruleId],
+    severity: ERROR_SEVERITY[ruleId],
     evidenceCode,
     evidence,
     evaluatorVersion: EVALUATOR_VERSION,

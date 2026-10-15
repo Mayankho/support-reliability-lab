@@ -4,8 +4,8 @@ A running log of what has been verified, what remains, and the next concrete ste
 
 ## Current position
 
-- **Last completed milestone:** T05, the ticket triage demo and the optional local-only import. The ten core milestones and the additive workstream are done, except T04, which is deferred until someone other than the author can review new expected outcomes.
-- **Next action:** human review of the branch, then pushing it and confirming CI on GitHub. After that, the highest-value additions are independent review of the 80 starter labels and the 8 proposed cases, and a second reviewer for the crosswalk.
+- **Last completed milestone:** T05, the ticket triage demo and the optional local-only import. The ten core milestones and the additive workstream are done, except T04, which is deferred until someone other than the author can review new expected outcomes. `main` is `5f5d4dd` and CI passed on that commit.
+- **Next action:** review the gate-integrity and artifact-upload fix (ADR-023), then commit and push it. T04 stays deferred. The 80 starter labels and the crosswalk still need a second reviewer.
 
 ## Log
 
